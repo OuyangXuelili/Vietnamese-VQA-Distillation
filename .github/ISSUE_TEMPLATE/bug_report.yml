@@ -1,0 +1,38 @@
+name: Bug report
+description: Báo lỗi khi chạy demo, model hoặc pipeline
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Cảm ơn bạn đã báo lỗi. Không dán access token hoặc dữ liệu nhạy cảm.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Thành phần
+      options:
+        - Gradio demo
+        - Student 2B
+        - Teacher 7B
+        - Dataset
+        - Training / distillation
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Môi trường
+      placeholder: Windows 11, Python 3.11, NVIDIA T4 15 GB
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Mô tả lỗi và cách tái hiện
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log / traceback
+      render: shell

@@ -1,0 +1,33 @@
+# Secrets and local environments
+.env
+.venv/
+venv/
+
+# Python caches and tooling
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Local model weights and generated outputs
+/models/
+/outputs-7B/
+/outputs-2B-distilled/
+/data/cache/
+
+# Runtime artifacts
+*.log
+*.zip
+/results/
+/checkpoints/
+
+# Hugging Face local metadata
+/.cache/
+/.hf-rewrite/
+/.hf-migrate/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

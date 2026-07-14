@@ -1,0 +1,40 @@
+name: Quality checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Compile Python sources
+        run: python -m compileall -q app.py src scripts
+
+      - name: Reject accidentally committed model weights
+        shell: bash
+        run: |
+          if git ls-files | grep -E '\.(safetensors|bin|pt|pth|ckpt)$'; then
+            echo "Model weights must be stored on Hugging Face, not GitHub."
+            exit 1
+          fi
+
+      - name: Validate project metadata
+        shell: bash
+        run: |
+          test -f LICENSE
+          test -f CITATION.cff
+          test -f requirements-app.txt
+          grep -q "OuyangXuelili/Vietnamese-VQA-Distillation" README.md

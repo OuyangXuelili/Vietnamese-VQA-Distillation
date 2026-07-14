@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="360" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">Vietnamese VQA Distillation</title>
+  <desc id="desc">A branded banner showing vision, language, teacher and student models.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="0.52" stop-color="#172554"/>
+      <stop offset="1" stop-color="#164e63"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#22d3ee"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#020617" flood-opacity=".28"/>
+    </filter>
+  </defs>
+  <rect width="1200" height="360" rx="26" fill="url(#bg)"/>
+  <circle cx="1080" cy="20" r="190" fill="#22d3ee" opacity=".08"/>
+  <circle cx="1035" cy="330" r="120" fill="#3b82f6" opacity=".10"/>
+  <path d="M0 303 C220 238 380 390 610 308 C820 232 930 332 1200 247 L1200 360 L0 360Z" fill="#fff" opacity=".035"/>
+
+  <g transform="translate(66 62)">
+    <rect width="58" height="58" rx="16" fill="url(#accent)"/>
+    <path d="M15 20h28v20H15z" fill="none" stroke="#fff" stroke-width="3" rx="4"/>
+    <circle cx="24" cy="28" r="4" fill="#fff"/>
+    <path d="m18 37 8-7 7 6 5-4 5 5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+
+  <text x="66" y="164" fill="#67e8f9" font-family="Segoe UI, Arial, sans-serif" font-size="15" font-weight="700" letter-spacing="3">VIETNAMESE VISION-LANGUAGE INTELLIGENCE</text>
+  <text x="66" y="214" fill="#fff" font-family="Segoe UI, Arial, sans-serif" font-size="45" font-weight="750">Vietnamese VQA Distillation</text>
+  <text x="67" y="253" fill="#cbd5e1" font-family="Segoe UI, Arial, sans-serif" font-size="20">Visual Question Answering · Qwen2-VL · Knowledge Distillation</text>
+  <g transform="translate(67 281)" font-family="Segoe UI, Arial, sans-serif" font-size="14" font-weight="650">
+    <rect width="104" height="34" rx="17" fill="#fff" opacity=".09" stroke="#fff" stroke-opacity=".18"/>
+    <text x="52" y="22" text-anchor="middle" fill="#e2e8f0">Teacher 7B</text>
+    <path d="M117 17h42" stroke="#67e8f9" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="m154 12 7 5-7 5" fill="none" stroke="#67e8f9" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="174" width="106" height="34" rx="17" fill="#fff" opacity=".09" stroke="#fff" stroke-opacity=".18"/>
+    <text x="227" y="22" text-anchor="middle" fill="#e2e8f0">Student 2B</text>
+  </g>
+
+  <g transform="translate(870 92)" filter="url(#shadow)">
+    <rect width="248" height="176" rx="24" fill="#fff" opacity=".96"/>
+    <rect x="22" y="22" width="204" height="86" rx="14" fill="#eff6ff"/>
+    <circle cx="70" cy="63" r="22" fill="#60a5fa" opacity=".72"/>
+    <path d="M47 91c13-22 24-29 36-18l17 13 20-24 35 29" fill="none" stroke="#0891b2" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="23" y="127" width="126" height="10" rx="5" fill="#cbd5e1"/>
+    <rect x="23" y="148" width="175" height="8" rx="4" fill="#e2e8f0"/>
+    <circle cx="207" cy="132" r="20" fill="url(#accent)"/>
+    <path d="m199 132 6 6 11-13" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

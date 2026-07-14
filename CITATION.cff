@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this project, please cite the repository."
+title: "Vietnamese VQA Distillation"
+type: software
+authors:
+  - name: "OuyangXuelili"
+version: 1.0.0
+date-released: 2026-07-14
+url: "https://github.com/OuyangXuelili/Vietnamese-VQA-Distillation"
+repository-code: "https://github.com/OuyangXuelili/Vietnamese-VQA-Distillation"
+license: MIT
+keywords:
+  - visual question answering
+  - vietnamese
+  - knowledge distillation
+  - qwen2-vl
+  - vision-language model
