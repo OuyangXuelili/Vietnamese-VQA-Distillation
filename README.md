@@ -219,6 +219,7 @@ python scripts/evaluate.py --help
 - [Training module](src/training/README.md)
 - [Scripts](scripts/README.md)
 - [Dataset notes](data/README.md)
+- [Lộ trình nâng cấp](ROADMAP.md)
 
 ## Tác giả và giấy phép
 

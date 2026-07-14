@@ -25,6 +25,7 @@ __pycache__/
 /.cache/
 /.hf-rewrite/
 /.hf-migrate/
+/.hf-dataset-tree-count/
 
 # Editors and operating systems
 .vscode/

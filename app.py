@@ -110,6 +110,40 @@ CUSTOM_CSS = """
 }
 .primary-action { min-height: 48px !important; font-weight: 800 !important; }
 .result-box textarea { font-size: 1.02rem !important; line-height: 1.7 !important; }
+.answer-card {
+  margin-top: 4px;
+  padding: 12px 14px 14px !important;
+  border: 1px solid rgba(148, 163, 184, .24) !important;
+  border-radius: 16px !important;
+  background: rgba(248, 250, 252, .76) !important;
+}
+.answer-header { align-items: center !important; margin-bottom: 4px !important; }
+.answer-title { flex: 1 1 auto !important; min-width: 160px !important; }
+.answer-title h3 { margin: 0 !important; color: var(--brand-ink); font-size: .98rem !important; }
+.time-chip-output {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  margin-left: auto !important;
+}
+.time-chip-output > div { padding: 0 !important; }
+.time-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  width: max-content;
+  padding: 6px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  font-size: .78rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.time-chip::before { content: "◷"; font-size: .92rem; }
+.time-chip.idle { color: #64748b; border-color: #e2e8f0; background: #f8fafc; }
+.time-chip.error { color: #b91c1c; border-color: #fecaca; background: #fef2f2; }
 .model-note {
   padding: 12px 14px;
   border-left: 3px solid var(--brand-cyan);
@@ -164,6 +198,13 @@ def get_inference(model_choice: str) -> tuple[VQAInference, float]:
         return engine, time.perf_counter() - started
 
 
+def time_badge(message: str, state: str = "success") -> str:
+    """Render a compact persistent timing badge for the answer card."""
+    safe_message = html.escape(message)
+    safe_state = state if state in {"success", "idle", "error"} else "idle"
+    return f'<span class="time-chip {safe_state}">{safe_message}</span>'
+
+
 def answer(
     image,
     question: str,
@@ -173,9 +214,9 @@ def answer(
 ) -> tuple[str, str]:
     """Answer one Vietnamese visual question from the web interface."""
     if image is None:
-        return "Vui lòng tải lên một hình ảnh trước.", "Chưa thực hiện"
+        return "Vui lòng tải lên một hình ảnh trước.", time_badge("Chưa thực hiện", "idle")
     if not question or not question.strip():
-        return "Vui lòng nhập câu hỏi về hình ảnh.", "Chưa thực hiện"
+        return "Vui lòng nhập câu hỏi về hình ảnh.", time_badge("Chưa thực hiện", "idle")
 
     try:
         engine, load_seconds = get_inference(model_choice)
@@ -205,16 +246,15 @@ def answer(
         timing_parts = [f"Suy luận {inference_seconds:.1f} giây"]
         if load_seconds:
             timing_parts.insert(0, f"Nạp model {load_seconds:.1f} giây")
-            timing_parts.append("các câu tiếp theo sẽ nhanh hơn")
-        return prediction.strip(), " · ".join(timing_parts)
+        return prediction.strip(), time_badge(" · ".join(timing_parts))
     except Exception as exc:
         safe_error = html.escape(str(exc))
-        return f"Không thể chạy model: {safe_error}", "Đã xảy ra lỗi"
+        return f"Không thể chạy model: {safe_error}", time_badge("Đã xảy ra lỗi", "error")
 
 
 def clear_workspace():
     """Reset only user inputs and generated outputs."""
-    return None, "", "", "Sẵn sàng"
+    return None, "", "", time_badge("Sẵn sàng", "idle")
 
 
 def create_demo() -> gr.Blocks:
@@ -297,17 +337,19 @@ def create_demo() -> gr.Blocks:
                         )
                         clear = gr.Button("Làm mới", scale=1)
 
-                    result = gr.Textbox(
-                        label="Câu trả lời",
-                        lines=7,
-                        show_copy_button=True,
-                        elem_classes="result-box",
-                    )
-                    timing = gr.Textbox(
-                        label="Trạng thái",
-                        value="Sẵn sàng",
-                        interactive=False,
-                    )
+                    with gr.Column(elem_classes="answer-card"):
+                        with gr.Row(elem_classes="answer-header"):
+                            gr.Markdown("### Câu trả lời", elem_classes="answer-title")
+                            timing = gr.HTML(
+                                time_badge("Sẵn sàng", "idle"),
+                                elem_classes="time-chip-output",
+                            )
+                        result = gr.Textbox(
+                            lines=7,
+                            show_label=False,
+                            show_copy_button=True,
+                            elem_classes="result-box",
+                        )
 
                     gr.Examples(
                         examples=[
