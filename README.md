@@ -113,10 +113,10 @@ python app.py
 
 Truy cập `http://127.0.0.1:7860`. Lần chạy model đầu tiên sẽ lâu hơn vì phải nạp base model và adapter; các câu tiếp theo không phải nạp lại.
 
-Để tạo URL Gradio tạm thời khi chạy trên Colab:
+Để tạo URL tạm thời khi chạy trên Colab mà không phụ thuộc `gradio.live`:
 
 ```bash
-python app.py --host 0.0.0.0 --share
+python -u scripts/run_colab_demo.py
 ```
 
 ### Tải trước để chạy offline
@@ -133,7 +133,17 @@ python app.py --download-adapter all
 
 ## Chạy trên Google Colab
 
-Chọn runtime GPU, sau đó chạy lần lượt:
+Nếu project đã được lưu tại `MyDrive/TtI/Vi-VQA-End-to-End`, mở
+[`notebooks/colab-demo.ipynb`](notebooks/colab-demo.ipynb), chọn **T4 GPU** và chạy
+toàn bộ notebook. Notebook sẽ:
+
+- mount Google Drive;
+- chép mã nguồn và hai adapter vào `/content` để giảm độ trễ;
+- dùng base model đang lưu trên Drive mà không nhân đôi hơn 20 GB dữ liệu;
+- cài dependencies, kiểm tra nguồn model và mở Gradio qua public URL tạm thời;
+- tự kết nối lại tunnel nếu đường truyền công khai bị ngắt, không làm dừng server Gradio.
+
+Nếu không dùng bản trên Drive, có thể clone repository rồi chạy thủ công:
 
 ```python
 !git clone https://github.com/OuyangXuelili/Vietnamese-VQA-Distillation.git
@@ -142,8 +152,13 @@ Chọn runtime GPU, sau đó chạy lần lượt:
 ```
 
 ```python
-!python app.py --host 0.0.0.0 --share
+!python -u scripts/run_colab_demo.py
 ```
+
+Launcher này giữ Gradio ở `127.0.0.1:7860` và tạo tunnel riêng qua
+`localhost.run`. Hãy mở URL nằm sau dòng `DEMO_URL:` và giữ cell cuối tiếp tục
+chạy. Không dùng lại URL của lần chạy trước vì mỗi phiên Colab sẽ tạo một URL
+tạm thời mới.
 
 Với repository GitHub đang để **Private**, Colab cần được xác thực GitHub trước khi clone. Các model và dataset Hugging Face hiện là public nên không cần token để chạy demo.
 
@@ -152,7 +167,7 @@ Với repository GitHub đang để **Private**, Colab cần được xác thự
 | Chế độ | GPU đề xuất | Ghi chú |
 |---|---:|---|
 | Student 2B FP16 | NVIDIA T4 15 GB trở lên | Lựa chọn mặc định, cân bằng tốc độ và bộ nhớ |
-| Teacher 7B 4-bit | GPU 15–16 GB trở lên | Nạp chậm hơn, dùng bitsandbytes |
+| Teacher 7B 4-bit | Khuyến nghị L4/A100 | Có thể vừa T4 nhưng nạp 5 shard từ Drive rất chậm và phiên miễn phí có thể bị ngắt |
 | CPU | RAM khoảng 8 GB cho 2B, 20 GB cho 7B | Có thể chạy nhưng rất chậm, không khuyến nghị |
 | Training/Distillation | GPU 40 GB+ | Chỉ cần khi muốn huấn luyện lại |
 

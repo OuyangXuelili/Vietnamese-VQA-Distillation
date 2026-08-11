@@ -97,12 +97,17 @@ class VQAModelLoader:
                 raise RuntimeError("4-bit loading requires a CUDA GPU")
             if not has_bnb:
                 raise RuntimeError("Install bitsandbytes to use CUDA 4-bit loading")
+            compute_dtype = (
+                torch.bfloat16
+                if torch.cuda.is_bf16_supported()
+                else torch.float16
+            )
             kwargs.update(
                 device_map="auto",
                 max_memory=max_memory,
                 quantization_config=BitsAndBytesConfig(
                     load_in_4bit=True,
-                    bnb_4bit_compute_dtype=torch.bfloat16,
+                    bnb_4bit_compute_dtype=compute_dtype,
                     bnb_4bit_use_double_quant=True,
                     bnb_4bit_quant_type="nf4",
                 ),

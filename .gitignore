@@ -21,6 +21,9 @@ __pycache__/
 /results/
 /checkpoints/
 
+# Microsoft Word temporary lock files
+reports/~$*.docx
+
 # Hugging Face local metadata
 /.cache/
 /.hf-rewrite/
