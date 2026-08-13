@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import gc
 import html
-import json
+import io
+import re
 import sys
-import tempfile
 import threading
 import time
+import uuid
 from datetime import datetime
 from pathlib import Path
 
@@ -26,8 +28,8 @@ ROOT = Path(__file__).resolve().parent
 APP_TITLE = "Vietnamese Generative VQA Distillation"
 OWNER = "OuyangXuelili"
 
-STUDENT_LABEL = "Student 2B · FP16"
-TEACHER_LABEL = "Teacher 7B · 4-bit"
+STUDENT_LABEL = "ViVQA 2B"
+TEACHER_LABEL = "ViVQA 7B"
 
 ADAPTERS = {
     STUDENT_LABEL: {
@@ -58,268 +60,6 @@ HISTORY_HEADERS = [
     "Câu trả lời",
     "Suy luận (giây)",
 ]
-
-
-CUSTOM_CSS = """
-:root {
-  --ui-canvas: #f7f7f6;
-  --ui-surface: #ffffff;
-  --ui-surface-subtle: #fafaf9;
-  --ui-ink: #18181b;
-  --ui-muted: #6b6b72;
-  --ui-line: #e4e4e7;
-  --ui-line-strong: #d4d4d8;
-  --ui-danger: #b91c1c;
-}
-
-html, body {
-  background: var(--ui-canvas) !important;
-}
-
-.gradio-container {
-  width: 100% !important;
-  max-width: 1120px !important;
-  margin: 0 auto !important;
-  padding: 0 20px !important;
-  color: var(--ui-ink) !important;
-  background: transparent !important;
-  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-.gradio-container h1,
-.gradio-container h2,
-.gradio-container h3,
-.gradio-container p,
-.gradio-container button,
-.gradio-container input,
-.gradio-container textarea,
-.gradio-container select {
-  font-family: inherit !important;
-}
-
-.app-shell {
-  width: 100% !important;
-  gap: 14px !important;
-  padding: 24px 0 32px !important;
-}
-
-.product-header {
-  padding: 2px 2px 18px;
-  border-bottom: 1px solid var(--ui-line);
-}
-
-.product-header h1 {
-  margin: 0;
-  color: var(--ui-ink);
-  font-size: clamp(1.55rem, 3vw, 2rem);
-  font-weight: 720;
-  letter-spacing: -.035em;
-  line-height: 1.18;
-}
-
-.product-header p {
-  max-width: 700px;
-  margin: 7px 0 0;
-  color: var(--ui-muted);
-  font-size: .9rem;
-  line-height: 1.55;
-}
-
-.workspace {
-  gap: 14px !important;
-  margin-top: 0 !important;
-  align-items: flex-start !important;
-}
-
-.panel,
-.input-panel,
-.query-panel {
-  min-width: 0 !important;
-  padding: 18px !important;
-  border: 1px solid var(--ui-line) !important;
-  border-radius: 12px !important;
-  background: var(--ui-surface) !important;
-  box-shadow: none !important;
-}
-
-.workspace .input-panel,
-.workspace .query-panel {
-  align-self: flex-start !important;
-  height: auto !important;
-}
-
-.panel-heading {
-  margin-bottom: 12px;
-}
-
-.panel-heading h2 {
-  margin: 0;
-  color: var(--ui-ink);
-  font-size: 1rem;
-  font-weight: 700;
-  letter-spacing: -.015em;
-}
-
-.input-panel > .block,
-.query-panel > .block {
-  flex: 0 0 auto !important;
-}
-
-.input-panel .image-container,
-.input-panel [data-testid="image"] {
-  border-color: var(--ui-line) !important;
-  border-radius: 10px !important;
-}
-
-.image-uploader {
-  height: 320px !important;
-  min-height: 0 !important;
-}
-
-.input-panel [data-testid="image"] .upload-container > button > .wrap {
-  font-size: 0 !important;
-}
-
-.input-panel [data-testid="image"] .upload-container > button > .wrap::after {
-  display: block;
-  margin-top: 10px;
-  color: var(--ui-muted);
-  content: "Kéo thả hoặc chọn ảnh";
-  font-size: .9rem;
-  line-height: 1.4;
-}
-
-.input-panel [data-testid="image"] .upload-container .or {
-  display: none !important;
-}
-
-.image-meta-output,
-.image-meta-output > div {
-  padding: 0 !important;
-}
-
-.image-meta {
-  display: flex;
-  align-items: center;
-  min-height: 20px;
-  margin-top: 1px;
-  color: var(--ui-muted);
-  font-size: .76rem;
-  line-height: 1.4;
-}
-
-.image-meta::before {
-  width: 6px;
-  height: 6px;
-  margin-right: 8px;
-  border-radius: 999px;
-  background: #a1a1aa;
-  content: "";
-}
-
-.image-meta.ready::before {
-  background: #16a34a;
-}
-
-.options-drawer {
-  margin-top: 2px !important;
-  border-color: var(--ui-line) !important;
-  border-radius: 10px !important;
-  background: var(--ui-surface-subtle) !important;
-}
-
-.primary-action {
-  min-height: 46px !important;
-  border-color: var(--ui-ink) !important;
-  border-radius: 9px !important;
-  color: #ffffff !important;
-  background: var(--ui-ink) !important;
-  box-shadow: none !important;
-  font-weight: 680 !important;
-}
-
-.primary-action:hover {
-  border-color: #27272a !important;
-  background: #27272a !important;
-}
-
-.answer-card {
-  margin-top: 5px;
-  padding: 15px 0 0 !important;
-  border: 0 !important;
-  border-top: 1px solid var(--ui-line) !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-}
-
-.answer-header {
-  align-items: center !important;
-  margin-bottom: 6px !important;
-}
-
-.answer-title {
-  flex: 1 1 auto !important;
-  min-width: 120px !important;
-}
-
-.answer-title h3 {
-  margin: 0 !important;
-  color: var(--ui-ink) !important;
-  font-size: .9rem !important;
-  font-weight: 700 !important;
-}
-
-.time-chip-output {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: 0 !important;
-  margin-left: auto !important;
-}
-
-.time-chip-output > div { padding: 0 !important; }
-
-.time-chip {
-  color: var(--ui-muted);
-  font-size: .73rem;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.time-chip.error { color: var(--ui-danger); }
-
-.result-box textarea {
-  color: var(--ui-ink) !important;
-  background: #ffffff !important;
-  font-size: .96rem !important;
-  line-height: 1.6 !important;
-}
-
-.result-box,
-.result-box > div {
-  border-color: var(--ui-line) !important;
-  border-radius: 9px !important;
-}
-
-footer { display: none !important; }
-
-@media (max-width: 860px) {
-  .gradio-container { padding: 0 12px !important; }
-  .app-shell { padding-top: 16px !important; }
-  .product-header { padding-bottom: 14px; }
-  .product-header h1 { font-size: 1.45rem; }
-  .workspace { flex-direction: column !important; }
-  .workspace .input-panel,
-  .workspace .query-panel {
-    width: 100% !important;
-    max-width: none !important;
-    flex: 1 1 100% !important;
-  }
-  .panel,
-  .input-panel,
-  .query-panel { padding: 15px !important; }
-  .image-uploader { height: 240px !important; }
-}
-"""
 
 
 def adapter_status() -> list[str]:
@@ -353,6 +93,10 @@ def _release_loaded_models() -> None:
 def get_inference(model_choice: str) -> tuple[VQAInference, float]:
     """Load one model at a time and return its one-time loading duration."""
     global _active_model_choice
+
+    if model_choice not in ADAPTERS:
+        valid = ", ".join(ADAPTERS)
+        raise ValueError(f"Model không hợp lệ: {model_choice!r}. Chọn một trong: {valid}")
 
     if model_choice in _inference_engines:
         return _inference_engines[model_choice], 0.0
@@ -390,17 +134,34 @@ def time_badge(message: str, state: str = "success") -> str:
     return f'<span class="time-chip {safe_state}">{safe_message}</span>'
 
 
-def image_summary(image) -> str:
-    """Return compact image metadata without retaining another image copy."""
-    if image is None:
-        return '<div class="image-meta">Chưa có ảnh được chọn</div>'
-    width, height = image.size
-    megapixels = width * height / 1_000_000
+def running_badge(message: str, started_at: float | None = None) -> str:
+    """Render a live request status; the browser updates its elapsed counter."""
+    safe_message = html.escape(message)
+    started_ms = int((started_at or time.time()) * 1000)
     return (
-        '<div class="image-meta ready">'
-        f'Kích thước: {width} × {height} px · {megapixels:.2f} MP'
-        '</div>'
+        '<span class="time-chip running">'
+        '<span class="status-pulse" aria-hidden="true"></span>'
+        f'<span>{safe_message}</span>'
+        f'<span class="live-elapsed" data-start="{started_ms}">0.0 giây</span>'
+        '</span>'
     )
+
+
+def friendly_inference_error(exc: Exception) -> str:
+    """Translate backend failures into short, useful Vietnamese UI messages."""
+    detail = str(exc).lower()
+    if "not enough free ram" in detail or "gb required" in detail:
+        return (
+            "Máy này không đủ bộ nhớ để chạy mô hình. "
+            "Hãy chạy demo trên Colab với GPU T4."
+        )
+    if "out of memory" in detail or "cuda" in detail and "memory" in detail:
+        return (
+            "GPU không đủ bộ nhớ. Hãy chọn ViVQA 2B hoặc khởi động lại phiên Colab."
+        )
+    if "no such file" in detail or "not found" in detail:
+        return "Không tìm thấy tệp mô hình cần thiết. Hãy kiểm tra lại thư mục trên Drive."
+    return "Không thể xử lý ảnh lúc này. Hãy thử lại hoặc khởi động lại phiên Colab."
 
 
 def history_rows(history: list[dict] | None) -> list[list]:
@@ -456,38 +217,61 @@ def system_status_html() -> str:
     """
 
 
-def adapter_sources_html() -> str:
-    """Render local/Hub adapter sources for the system tab."""
-    items = "".join(f"<li>{html.escape(message)}</li>" for message in adapter_status())
-    return f'<ul class="source-list">{items}</ul>'
-
-
-def unload_models_ui() -> tuple[str, str]:
-    """Release the active model and refresh the system panel."""
-    with _load_lock:
-        _release_loaded_models()
-    return (
-        system_status_html(),
-        '<div class="action-note">Đã giải phóng model và CUDA cache. Lần chạy tiếp theo sẽ nạp lại model.</div>',
+def _needs_conversation_context(question: str) -> bool:
+    """Use previous turns only for questions that clearly refer back to them."""
+    normalized = " ".join(question.lower().split())
+    references = (
+        "còn ",
+        "vậy ",
+        "nó ",
+        "họ ",
+        "người đó",
+        "vật đó",
+        "con đó",
+        "bên kia",
+        "ở đó",
+        "như vậy",
     )
+    return len(normalized) <= 120 and any(token in normalized for token in references)
 
 
-def export_history(history: list[dict] | None):
-    """Write session history to a temporary JSON file for Gradio download."""
-    if not history:
-        return None
-    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    path = Path(tempfile.gettempdir()) / f"vqa-history-{timestamp}.json"
-    path.write_text(
-        json.dumps(history, ensure_ascii=False, indent=2),
-        encoding="utf-8",
+def build_model_prompt(
+    question: str,
+    model_choice: str,
+    response_style: str,
+    context: str | None = None,
+) -> str:
+    """Build a short prompt compatible with the fine-tuned VQA adapters."""
+    clean_question = " ".join(question.strip().split())
+    prompt = clean_question
+
+    if context and _needs_conversation_context(clean_question):
+        prompt = f"Ngữ cảnh gần nhất:\n{context}\nCâu hỏi: {clean_question}"
+
+    # The distilled Student was trained mostly on concise VQA labels. Long
+    # meta-instructions make it repeat the instruction instead of describing
+    # the image, so each model gets a deliberately short instruction.
+    if response_style == "Mô tả chi tiết":
+        if model_choice == STUDENT_LABEL:
+            return f"{prompt}\nMô tả ảnh bằng tiếng Việt."
+        return f"{prompt}\nMô tả rõ các chi tiết nhìn thấy trong ảnh bằng tiếng Việt."
+    if response_style == "Trả lời ngắn":
+        return f"{prompt}\nTrả lời ngắn gọn bằng tiếng Việt."
+    return prompt
+
+
+def looks_like_prompt_echo(answer_text: str) -> bool:
+    """Detect the instruction-echo failure seen in the distilled model."""
+    normalized = re.sub(r"\s+", " ", answer_text.lower()).strip(" .,:;!?")
+    echo_fragments = (
+        "mô tả đầy đủ ảnh",
+        "mô tả ảnh bằng tiếng việt",
+        "mô tả rõ các chi tiết",
+        "chỉ nêu những điều",
+        "trả lời ngắn gọn bằng tiếng việt",
+        "câu hỏi hiện tại",
     )
-    return str(path)
-
-
-def clear_history() -> tuple[list, list, None]:
-    """Clear records from the current browser session."""
-    return [], [], None
+    return not normalized or any(fragment in normalized for fragment in echo_fragments)
 
 
 def answer(
@@ -498,6 +282,8 @@ def answer(
     max_new_tokens: int,
     history: list[dict] | None,
     conversation_context: str | None = None,
+    preloaded_engine: VQAInference | None = None,
+    preloaded_load_seconds: float = 0.0,
 ) -> tuple[str, str, list[dict], list[list], str]:
     """Answer one Vietnamese visual question from the web interface."""
     records = list(history or [])
@@ -519,24 +305,18 @@ def answer(
         )
 
     try:
-        engine, load_seconds = get_inference(model_choice)
-        prompt = question.strip()
-        if conversation_context:
-            prompt = (
-                "Ngữ cảnh các lượt hỏi trước (chỉ dùng khi có liên quan đến ảnh hiện tại):\n"
-                f"{conversation_context}\n\n"
-                f"Câu hỏi hiện tại: {prompt}"
-            )
+        if preloaded_engine is None:
+            engine, load_seconds = get_inference(model_choice)
+        else:
+            engine = preloaded_engine
+            load_seconds = float(preloaded_load_seconds)
+        prompt = build_model_prompt(
+            question,
+            model_choice,
+            response_style,
+            conversation_context,
+        )
         min_new_tokens = 0
-
-        if response_style == "Mô tả chi tiết":
-            prompt = (
-                f"{prompt}\n\n"
-                "Mô tả đầy đủ ảnh bằng tiếng Việt trong 2 đến 4 câu, "
-                "chỉ nêu những điều có thể quan sát trực tiếp."
-            )
-        elif response_style == "Trả lời ngắn":
-            prompt = f"{prompt}\nHãy trả lời ngắn gọn, trực tiếp bằng tiếng Việt."
 
         inference_started = time.perf_counter()
         prediction = engine.predict_single(
@@ -545,6 +325,15 @@ def answer(
             int(max_new_tokens),
             min_new_tokens,
         )
+        retried_prompt_echo = False
+        if looks_like_prompt_echo(prediction):
+            retried_prompt_echo = True
+            prediction = engine.predict_single(
+                image.convert("RGB"),
+                question.strip(),
+                min(int(max_new_tokens), 96),
+                0,
+            )
         inference_seconds = time.perf_counter() - inference_started
 
         timing_parts = [f"Suy luận {inference_seconds:.1f} giây"]
@@ -564,6 +353,7 @@ def answer(
                 "image_size": f"{width}x{height}",
                 "load_seconds": round(load_seconds, 3),
                 "inference_seconds": round(inference_seconds, 3),
+                "retried_prompt_echo": retried_prompt_echo,
             }
         )
         records = records[-100:]
@@ -575,925 +365,14 @@ def answer(
             system_status_html(),
         )
     except Exception as exc:
-        safe_error = html.escape(str(exc))
+        print(f"[ViVQA] Inference error: {exc}", file=sys.stderr, flush=True)
         return (
-            f"Không thể chạy model: {safe_error}",
-            time_badge("Đã xảy ra lỗi", "error"),
+            friendly_inference_error(exc),
+            time_badge("", "idle"),
             records,
             history_rows(records),
             system_status_html(),
         )
-
-
-def clear_workspace():
-    """Reset only user inputs and generated outputs."""
-    return None, "", "", time_badge("Sẵn sàng", "idle"), image_summary(None)
-
-
-def _create_legacy_demo() -> gr.Blocks:
-    """Build the branded Gradio interface."""
-    with gr.Blocks(
-        title=APP_TITLE,
-        analytics_enabled=False,
-    ) as demo:
-        history_state = gr.State([])
-
-        with gr.Column(elem_id="vqa-app", elem_classes="app-shell"):
-            gr.HTML(
-                """
-                <header class="product-header">
-                  <h1>Hỏi đáp hình ảnh tiếng Việt</h1>
-                  <p>Demo Qwen2-VL-2B được tinh gọn bằng chưng cất tri thức cho bài toán hỏi đáp hình ảnh.</p>
-                </header>
-                """
-            )
-
-            with gr.Row(equal_height=False, elem_classes="workspace"):
-                with gr.Column(scale=5, elem_classes=["panel", "input-panel"]):
-                    gr.HTML(
-                        """
-                        <div class="panel-heading">
-                          <h2>Ảnh đầu vào</h2>
-                        </div>
-                        """
-                    )
-                    image = gr.Image(
-                        type="pil",
-                        show_label=False,
-                        height=320,
-                        sources=["upload", "clipboard"],
-                        elem_classes="image-uploader",
-                    )
-                    image_meta = gr.HTML(
-                        image_summary(None),
-                        elem_classes="image-meta-output",
-                    )
-
-                with gr.Column(scale=6, elem_classes=["panel", "query-panel"]):
-                    gr.HTML(
-                        """
-                        <div class="panel-heading">
-                          <h2>Câu hỏi</h2>
-                        </div>
-                        """
-                    )
-                    question = gr.Textbox(
-                        show_label=False,
-                        placeholder="Ví dụ: Có những vật thể nào trong ảnh và chúng đang ở đâu?",
-                        lines=3,
-                    )
-                    with gr.Accordion(
-                        "Tùy chọn",
-                        open=False,
-                        elem_classes="options-drawer",
-                    ):
-                        model_choice = gr.Dropdown(
-                            choices=list(ADAPTERS),
-                            value=STUDENT_LABEL,
-                            label="Mô hình",
-                        )
-                        response_style = gr.Radio(
-                            choices=["Mô tả chi tiết", "Cân bằng", "Trả lời ngắn"],
-                            value="Cân bằng",
-                            label="Cách trả lời",
-                        )
-                        max_new_tokens = gr.Slider(
-                            minimum=16,
-                            maximum=160,
-                            value=96,
-                            step=8,
-                            label="Số token sinh tối đa",
-                        )
-
-                    with gr.Row():
-                        submit = gr.Button(
-                            "Phân tích ảnh",
-                            variant="primary",
-                            elem_classes="primary-action",
-                            scale=4,
-                        )
-                        clear = gr.Button("Xóa", scale=1)
-
-                    with gr.Column(elem_classes="answer-card"):
-                        with gr.Row(elem_classes="answer-header"):
-                            gr.Markdown("### Kết quả", elem_classes="answer-title")
-                            timing = gr.HTML(
-                                time_badge("Sẵn sàng", "idle"),
-                                elem_classes="time-chip-output",
-                            )
-                        result = gr.Textbox(
-                            lines=5,
-                            show_label=False,
-                            placeholder="Câu trả lời sẽ xuất hiện tại đây.",
-                            buttons=["copy"],
-                            interactive=False,
-                            elem_classes="result-box",
-                        )
-
-            # Preserve session records and device state as callback outputs without
-            # exposing administrator controls in the public-facing demo.
-            with gr.Column(visible=False):
-                history_table = gr.Dataframe(
-                    headers=HISTORY_HEADERS,
-                    datatype=["str", "str", "str", "str", "number"],
-                    value=[],
-                    interactive=False,
-                )
-                system_status = gr.HTML(system_status_html())
-
-        inputs = [
-            image,
-            question,
-            model_choice,
-            response_style,
-            max_new_tokens,
-            history_state,
-        ]
-        answer_outputs = [result, timing, history_state, history_table, system_status]
-        submit.click(
-            fn=answer,
-            inputs=inputs,
-            outputs=answer_outputs,
-            show_progress="hidden",
-        )
-        question.submit(
-            fn=answer,
-            inputs=inputs,
-            outputs=answer_outputs,
-            show_progress="hidden",
-        )
-        image.change(
-            fn=image_summary,
-            inputs=image,
-            outputs=image_meta,
-            queue=False,
-        )
-        clear.click(
-            fn=clear_workspace,
-            outputs=[image, question, result, timing, image_meta],
-            queue=False,
-        )
-    return demo
-
-
-CHAT_CSS = """
-html, body {
-  background: #ffffff !important;
-}
-
-.gradio-container {
-  width: 100% !important;
-  max-width: none !important;
-  min-height: 100vh !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  color: #202123 !important;
-  background: #ffffff !important;
-}
-
-.gradio-container > .main.fillable {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.chat-shell {
-  height: 100vh !important;
-  min-height: 100vh !important;
-  gap: 0 !important;
-  flex-wrap: nowrap !important;
-  align-items: stretch !important;
-  background: #ffffff !important;
-}
-
-.chat-sidebar {
-  flex: 0 0 258px !important;
-  width: 258px !important;
-  min-width: 258px !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  overflow-y: auto !important;
-  padding: 18px 14px !important;
-  border-right: 1px solid #e7e7e7 !important;
-  background: #f7f7f8 !important;
-}
-
-.brand-lockup {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 2px 6px 16px;
-}
-
-.brand-mark {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  place-items: center;
-  border-radius: 10px;
-  color: #ffffff;
-  background: #202123;
-  font-size: .8rem;
-  font-weight: 800;
-  letter-spacing: -.03em;
-}
-
-.brand-name {
-  color: #202123;
-  font-size: .94rem;
-  font-weight: 700;
-  letter-spacing: -.01em;
-}
-
-.brand-caption {
-  margin-top: 1px;
-  color: #77777d;
-  font-size: .72rem;
-}
-
-.new-chat-button {
-  min-height: 42px !important;
-  margin-bottom: 14px !important;
-  border: 1px solid #d9d9dc !important;
-  border-radius: 10px !important;
-  color: #202123 !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-  font-weight: 650 !important;
-  text-align: left !important;
-}
-
-.new-chat-button:hover {
-  background: #f0f0f1 !important;
-}
-
-.settings-label {
-  padding: 10px 4px 8px;
-  color: #77777d;
-  font-size: .7rem;
-  font-weight: 750;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.chat-sidebar .block,
-.chat-sidebar .form {
-  border-color: #dedee1 !important;
-  border-radius: 10px !important;
-  box-shadow: none !important;
-}
-
-.sidebar-note {
-  margin-top: 14px;
-  padding: 10px 4px 0;
-  border-top: 1px solid #e2e2e4;
-  color: #77777d;
-  font-size: .73rem;
-  line-height: 1.5;
-}
-
-.chat-main {
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  min-width: 0 !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  background: #ffffff !important;
-}
-
-.chat-topbar {
-  display: flex;
-  flex: 0 0 62px !important;
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  align-items: center;
-  justify-content: space-between;
-  height: 62px;
-  width: 100% !important;
-  padding: 0 24px;
-  border-bottom: 1px solid #ececee;
-  background: rgba(255, 255, 255, .94);
-  backdrop-filter: blur(12px);
-}
-
-.chat-topbar-title {
-  color: #202123;
-  font-size: .96rem;
-  font-weight: 700;
-}
-
-.model-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: #606066;
-  font-size: .75rem;
-  font-weight: 600;
-}
-
-.model-pill::before {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #10a37f;
-  content: "";
-}
-
-.chat-stage {
-  flex: 1 1 auto !important;
-  width: min(100%, 880px) !important;
-  height: calc(100vh - 62px) !important;
-  min-height: 0 !important;
-  margin: 0 auto !important;
-  padding: 18px 24px 26px !important;
-  gap: 10px !important;
-  overflow-y: auto !important;
-}
-
-#chat-thread {
-  height: clamp(280px, calc(100vh - 330px), 510px) !important;
-  min-height: 280px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-}
-
-#chat-thread .message {
-  max-width: 82% !important;
-  border-radius: 18px !important;
-  box-shadow: none !important;
-  font-size: .96rem !important;
-  line-height: 1.62 !important;
-}
-
-#chat-thread .message.user {
-  border: 1px solid #e8e8e8 !important;
-  background: #f4f4f4 !important;
-}
-
-#chat-thread .message.bot,
-#chat-thread .message.assistant {
-  max-width: 92% !important;
-  border-color: transparent !important;
-  background: #ffffff !important;
-}
-
-.suggestion-row {
-  gap: 8px !important;
-  margin-top: 2px !important;
-}
-
-.suggestion-button {
-  min-height: 36px !important;
-  border: 1px solid #dfdfe2 !important;
-  border-radius: 999px !important;
-  color: #55555b !important;
-  background: #ffffff !important;
-  box-shadow: none !important;
-  font-size: .78rem !important;
-  font-weight: 550 !important;
-}
-
-.suggestion-button:hover {
-  color: #202123 !important;
-  background: #f7f7f8 !important;
-}
-
-.chat-composer {
-  position: sticky !important;
-  z-index: 15;
-  bottom: 14px;
-  gap: 10px !important;
-  align-items: center !important;
-  padding: 10px !important;
-  border: 1px solid #d9d9dd !important;
-  border-radius: 24px !important;
-  background: #ffffff !important;
-  box-shadow: 0 7px 24px rgba(0, 0, 0, .08) !important;
-}
-
-#composer-image {
-  flex: 0 0 92px !important;
-  width: 92px !important;
-  min-width: 92px !important;
-  height: 82px !important;
-  min-height: 82px !important;
-  overflow: hidden !important;
-  border: 1px dashed #cfd0d4 !important;
-  border-radius: 15px !important;
-  background: #f8f8f8 !important;
-}
-
-#composer-image .upload-container {
-  min-height: 80px !important;
-  padding: 4px !important;
-}
-
-#composer-image .upload-container svg {
-  width: 20px !important;
-  height: 20px !important;
-}
-
-#composer-image .upload-container .wrap {
-  font-size: 0 !important;
-}
-
-#composer-image .upload-container .wrap::after {
-  display: block;
-  margin-top: 4px;
-  color: #6f7075;
-  content: "Thêm ảnh";
-  font-size: .72rem;
-  font-weight: 600;
-}
-
-#composer-image .upload-container .or {
-  display: none !important;
-}
-
-.chat-input {
-  min-width: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.chat-input textarea {
-  min-height: 58px !important;
-  padding: 10px 4px !important;
-  border: 0 !important;
-  color: #202123 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  font-size: .96rem !important;
-  line-height: 1.45 !important;
-}
-
-.send-button {
-  flex: 0 0 58px !important;
-  width: 58px !important;
-  min-width: 58px !important;
-  min-height: 46px !important;
-  border: 0 !important;
-  border-radius: 16px !important;
-  color: #ffffff !important;
-  background: #202123 !important;
-  box-shadow: none !important;
-  font-weight: 700 !important;
-}
-
-.send-button:hover {
-  background: #343437 !important;
-}
-
-.composer-meta {
-  align-items: center !important;
-  min-height: 22px !important;
-  padding: 0 6px !important;
-}
-
-.composer-meta .image-meta,
-.composer-meta .time-chip {
-  margin: 0 !important;
-  color: #77777d !important;
-  font-size: .72rem !important;
-}
-
-.privacy-note {
-  margin: 2px 0 0;
-  color: #9a9a9f;
-  font-size: .68rem;
-  text-align: center;
-}
-
-@media (max-width: 820px) {
-  .chat-shell { flex-direction: column !important; }
-  .chat-sidebar {
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: auto !important;
-    padding: 10px 12px !important;
-    border-right: 0 !important;
-    border-bottom: 1px solid #e7e7e7 !important;
-  }
-  .brand-lockup { padding-bottom: 8px; }
-  .chat-sidebar .settings-label,
-  .chat-sidebar .sidebar-settings,
-  .chat-sidebar .sidebar-note { display: none !important; }
-  .new-chat-button { margin-bottom: 0 !important; }
-  .chat-topbar { height: 54px; padding: 0 14px; }
-  .chat-stage { padding: 10px 12px 18px !important; }
-  #chat-thread { min-height: 430px !important; }
-  .suggestion-row { display: none !important; }
-  .chat-composer { bottom: 8px; border-radius: 20px !important; }
-  #composer-image {
-    flex-basis: 70px !important;
-    width: 70px !important;
-    min-width: 70px !important;
-    height: 70px !important;
-    min-height: 70px !important;
-  }
-}
-"""
-
-
-PRODUCT_CSS = """
-:root {
-  --vqa-canvas: #f7f7f5;
-  --vqa-surface: #ffffff;
-  --vqa-surface-muted: #f1f1ef;
-  --vqa-ink: #18181b;
-  --vqa-muted: #71717a;
-  --vqa-line: #e4e4e7;
-  --vqa-accent: #3454d1;
-  --vqa-accent-hover: #2945b8;
-}
-
-html, body {
-  overflow: hidden !important;
-  background: var(--vqa-canvas) !important;
-}
-
-.gradio-container,
-.gradio-container > .main.fillable,
-.gradio-container main.contain {
-  width: 100% !important;
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 0 !important;
-}
-
-.product-shell {
-  width: 100% !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  gap: 0 !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  color: var(--vqa-ink) !important;
-  background: var(--vqa-canvas) !important;
-  font-family: Inter, "Segoe UI", system-ui, sans-serif !important;
-}
-
-.product-header {
-  flex: 0 0 68px !important;
-  width: 100% !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  margin: 0 !important;
-  padding: 0 24px !important;
-  border-bottom: 1px solid var(--vqa-line) !important;
-  background: rgba(255, 255, 255, .96) !important;
-  box-shadow: none !important;
-}
-
-.product-header-inner {
-  width: min(100%, 1080px) !important;
-  height: 68px !important;
-  margin: 0 auto !important;
-  gap: 12px !important;
-  align-items: center !important;
-  flex-wrap: nowrap !important;
-}
-
-.product-brand {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  gap: 11px;
-}
-
-.product-mark {
-  display: grid;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  place-items: center;
-  border-radius: 9px;
-  color: #fff;
-  background: var(--vqa-ink);
-  font-size: 12px;
-  font-weight: 750;
-  letter-spacing: -.04em;
-}
-
-.product-name {
-  color: var(--vqa-ink);
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -.015em;
-}
-
-.product-caption {
-  margin-top: 1px;
-  overflow: hidden;
-  color: var(--vqa-muted);
-  font-size: 11.5px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.header-spacer {
-  flex: 1 1 auto !important;
-  min-width: 12px !important;
-}
-
-.header-new-chat {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: 72px !important;
-  min-height: 38px !important;
-  padding: 0 14px !important;
-  border: 1px solid var(--vqa-line) !important;
-  border-radius: 10px !important;
-  color: var(--vqa-ink) !important;
-  background: var(--vqa-surface) !important;
-  box-shadow: none !important;
-  font-size: 13px !important;
-  font-weight: 600 !important;
-}
-
-.header-new-chat:hover {
-  background: var(--vqa-surface-muted) !important;
-}
-
-.header-model {
-  flex: 0 0 248px !important;
-  width: 248px !important;
-  min-width: 248px !important;
-  min-height: 38px !important;
-  margin: 0 !important;
-  border: 1px solid var(--vqa-line) !important;
-  border-radius: 10px !important;
-  background: var(--vqa-surface) !important;
-  box-shadow: none !important;
-}
-
-.header-model .wrap,
-.header-model input {
-  min-height: 36px !important;
-  color: var(--vqa-ink) !important;
-  background: transparent !important;
-  font-size: 12.5px !important;
-}
-
-.conversation-main {
-  flex: 1 1 auto !important;
-  width: 100% !important;
-  height: calc(100vh - 68px) !important;
-  min-height: 0 !important;
-  overflow: hidden !important;
-  background: var(--vqa-canvas) !important;
-}
-
-.conversation-body {
-  width: min(100%, 900px) !important;
-  height: 100% !important;
-  min-height: 0 !important;
-  margin: 0 auto !important;
-  padding: 16px 24px 10px !important;
-  gap: 9px !important;
-  flex-direction: column !important;
-  flex-wrap: nowrap !important;
-  overflow-y: auto !important;
-}
-
-.conversation-kicker {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 20px;
-  color: var(--vqa-muted);
-  font-size: 11.5px;
-}
-
-.runtime-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.runtime-status::before {
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: #22a06b;
-  content: "";
-}
-
-#chat-thread {
-  flex: 0 0 auto !important;
-  width: 100% !important;
-  height: clamp(250px, calc(100vh - 372px), 590px) !important;
-  min-height: 250px !important;
-  border: 0 !important;
-  border-radius: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-#chat-thread .message {
-  max-width: 82% !important;
-  padding: 10px 13px !important;
-  border: 0 !important;
-  border-radius: 14px !important;
-  box-shadow: none !important;
-  font-size: 14.5px !important;
-  line-height: 1.58 !important;
-}
-
-#chat-thread .message.user {
-  background: #ececea !important;
-}
-
-#chat-thread .message.bot,
-#chat-thread .message.assistant {
-  max-width: 94% !important;
-  padding-left: 0 !important;
-  background: transparent !important;
-}
-
-.advanced-panel {
-  flex: 0 0 auto !important;
-  margin: 0 !important;
-  border: 1px solid var(--vqa-line) !important;
-  border-radius: 10px !important;
-  background: var(--vqa-surface) !important;
-  box-shadow: none !important;
-}
-
-.advanced-panel > .label-wrap {
-  min-height: 38px !important;
-  padding: 8px 12px !important;
-  color: var(--vqa-muted) !important;
-  font-size: 12.5px !important;
-  font-weight: 600 !important;
-}
-
-.advanced-controls {
-  gap: 16px !important;
-  padding: 0 10px 10px !important;
-  align-items: end !important;
-  flex-wrap: nowrap !important;
-}
-
-.advanced-controls .block,
-.advanced-controls .form {
-  border: 0 !important;
-  box-shadow: none !important;
-}
-
-.suggestion-row {
-  flex: 0 0 auto !important;
-  gap: 8px !important;
-  margin: 0 !important;
-  flex-wrap: nowrap !important;
-}
-
-.suggestion-button {
-  min-height: 34px !important;
-  border: 1px solid var(--vqa-line) !important;
-  border-radius: 999px !important;
-  color: var(--vqa-muted) !important;
-  background: var(--vqa-surface) !important;
-  box-shadow: none !important;
-  font-size: 12.5px !important;
-  font-weight: 550 !important;
-}
-
-.suggestion-button:hover {
-  color: var(--vqa-ink) !important;
-  background: var(--vqa-surface-muted) !important;
-}
-
-.chat-composer {
-  flex: 0 0 auto !important;
-  position: sticky !important;
-  z-index: 10;
-  bottom: 8px;
-  min-height: 88px !important;
-  gap: 10px !important;
-  align-items: center !important;
-  padding: 9px !important;
-  border: 1px solid #d9d9dc !important;
-  border-radius: 18px !important;
-  background: var(--vqa-surface) !important;
-  box-shadow: 0 10px 30px rgba(24, 24, 27, .08) !important;
-  flex-wrap: nowrap !important;
-}
-
-#composer-image {
-  flex: 0 0 76px !important;
-  width: 76px !important;
-  min-width: 76px !important;
-  height: 68px !important;
-  min-height: 68px !important;
-  overflow: hidden !important;
-  border: 1px dashed #c9c9ce !important;
-  border-radius: 12px !important;
-  background: var(--vqa-surface-muted) !important;
-}
-
-#composer-image .upload-container {
-  min-height: 66px !important;
-  padding: 3px !important;
-}
-
-#composer-image .upload-container svg {
-  width: 18px !important;
-  height: 18px !important;
-}
-
-#composer-image .upload-container .wrap {
-  font-size: 0 !important;
-}
-
-#composer-image .upload-container .wrap::after {
-  display: block;
-  margin-top: 3px;
-  color: var(--vqa-muted);
-  content: "Thêm ảnh";
-  font-size: 10.5px;
-  font-weight: 600;
-}
-
-#composer-image .upload-container .or {
-  display: none !important;
-}
-
-.chat-input {
-  min-width: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.chat-input textarea {
-  min-height: 54px !important;
-  padding: 8px 2px !important;
-  border: 0 !important;
-  color: var(--vqa-ink) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  font-size: 14.5px !important;
-  line-height: 1.45 !important;
-}
-
-.send-button {
-  flex: 0 0 58px !important;
-  width: 58px !important;
-  min-width: 58px !important;
-  min-height: 44px !important;
-  border: 0 !important;
-  border-radius: 12px !important;
-  color: #fff !important;
-  background: var(--vqa-accent) !important;
-  box-shadow: none !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-}
-
-.send-button:hover {
-  background: var(--vqa-accent-hover) !important;
-}
-
-.composer-meta {
-  flex: 0 0 20px !important;
-  min-height: 20px !important;
-  padding: 0 4px !important;
-  align-items: center !important;
-}
-
-.composer-meta .image-meta,
-.composer-meta .time-chip {
-  margin: 0 !important;
-  color: var(--vqa-muted) !important;
-  font-size: 11px !important;
-}
-
-.privacy-note {
-  margin: 0;
-  color: #929298;
-  font-size: 10.5px;
-  text-align: center;
-}
-
-@media (max-width: 720px) {
-  .product-header { padding: 0 12px !important; }
-  .product-caption { display: none; }
-  .header-new-chat { min-width: 58px !important; padding: 0 10px !important; }
-  .header-model { flex-basis: 170px !important; width: 170px !important; min-width: 170px !important; }
-  .conversation-body { padding: 10px 12px 8px !important; }
-  #chat-thread { height: clamp(270px, calc(100vh - 330px), 520px) !important; }
-  .suggestion-row { display: none !important; }
-  .advanced-panel { display: none !important; }
-  #composer-image { flex-basis: 62px !important; width: 62px !important; min-width: 62px !important; }
-}
-"""
 
 
 GPT_CSS = """
@@ -1634,6 +513,64 @@ html, body {
   overflow: hidden !important;
 }
 
+.conversation-selector {
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 0 2px !important;
+  border: 0 !important;
+  background: transparent !important;
+  scrollbar-width: thin;
+}
+
+.conversation-selector > div,
+.conversation-selector .wrap {
+  gap: 2px !important;
+}
+
+.conversation-selector label {
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  border: 0 !important;
+  border-radius: 9px !important;
+  color: #3f3f46 !important;
+  background: transparent !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  cursor: pointer !important;
+}
+
+.conversation-selector label:hover {
+  background: #eeeeF0 !important;
+}
+
+.conversation-selector label:has(input:checked) {
+  color: var(--gpt-ink) !important;
+  background: #e7e7ea !important;
+  font-weight: 560 !important;
+}
+
+.conversation-selector input[type="radio"] {
+  display: none !important;
+}
+
+.sidebar-delete-chat {
+  width: 100% !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  color: #777781 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+}
+
+.sidebar-delete-chat:hover {
+  color: #b42318 !important;
+  background: #f1f1f2 !important;
+}
+
 .history-panel {
   height: 100%;
   overflow-y: auto;
@@ -1704,14 +641,24 @@ html, body {
   letter-spacing: -.01em;
 }
 
+.topbar-title-wrap {
+  flex: 0 0 140px !important;
+  min-width: 140px !important;
+}
+
 .topbar-spacer {
   flex: 1 1 auto !important;
+}
+
+.topbar-spacer-wrap {
+  flex: 1 1 auto !important;
+  min-width: 16px !important;
 }
 
 .topbar-model-picker {
   flex: 0 0 auto !important;
   width: auto !important;
-  min-width: 286px !important;
+  min-width: 218px !important;
   min-height: 42px !important;
   margin: 0 !important;
   padding: 3px 6px 3px 11px !important;
@@ -1733,9 +680,9 @@ html, body {
 }
 
 .topbar-model {
-  flex: 0 0 218px !important;
-  width: 218px !important;
-  min-width: 218px !important;
+  flex: 0 0 150px !important;
+  width: 150px !important;
+  min-width: 150px !important;
   height: 40px !important;
   min-height: 40px !important;
   max-height: 40px !important;
@@ -1757,6 +704,35 @@ html, body {
 .topbar-model:hover input,
 .topbar-model:hover button {
   background: #f5f5f5 !important;
+}
+
+.topbar-model-status {
+  flex: 0 0 auto !important;
+  margin-left: 7px !important;
+}
+
+.mobile-new-chat {
+  display: none !important;
+}
+
+.model-readiness {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7b7b85;
+  font-size: 10.5px;
+  white-space: nowrap;
+}
+
+.model-readiness span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a1a1aa;
+}
+
+.model-readiness.ready span {
+  background: #16a34a;
 }
 
 .gpt-stage {
@@ -1817,17 +793,16 @@ html, body {
   object-fit: contain !important;
 }
 
+#chat-thread .message.user button[aria-label="Fullscreen"] {
+  display: none !important;
+}
+
 #chat-thread .top-panel button[aria-label="Clear"] {
   display: none !important;
 }
 
 #chat-thread .message-buttons {
-  opacity: 0 !important;
-  transition: opacity .15s ease !important;
-}
-
-#chat-thread .message-wrap:hover .message-buttons {
-  opacity: 1 !important;
+  display: none !important;
 }
 
 .composer-area {
@@ -1835,6 +810,72 @@ html, body {
   width: 100% !important;
   margin: 0 !important;
   gap: 6px !important;
+}
+
+.active-image-strip {
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 12px !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.active-image-preview {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.pinned-image {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #575761;
+}
+
+.pinned-image img {
+  width: 52px;
+  height: 52px;
+  flex: 0 0 52px;
+  border: 1px solid #e3e3e7;
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+.pinned-image strong,
+.pinned-image span {
+  display: block;
+}
+
+.pinned-image strong {
+  margin-bottom: 2px;
+  color: #3f3f46;
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.pinned-image span {
+  color: #8b8b94;
+  font-size: 10.5px;
+}
+
+.clear-active-image {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 62px !important;
+  min-height: 30px !important;
+  margin-left: 0 !important;
+  padding: 0 10px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: #666670 !important;
+  background: #f1f1f3 !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
 }
 
 #chat-composer.chat-composer-gpt {
@@ -1927,6 +968,26 @@ html, body {
   background: #000 !important;
 }
 
+#chat-composer .stop-button {
+  display: none !important;
+  flex: 0 0 42px !important;
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 42px !important;
+  min-height: 42px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  color: #fff !important;
+  background: #111827 !important;
+  box-shadow: none !important;
+}
+
+#chat-composer .stop-button.vivqa-running {
+  display: inline-flex !important;
+}
+
 /* Keep the attachment preview inside the composer. */
 #chat-composer .thumbnails {
   display: flex !important;
@@ -2012,14 +1073,6 @@ html, body {
   background: #f4f4f5 !important;
 }
 
-.composer-note {
-  min-height: 17px !important;
-  margin: 0 !important;
-  text-align: center;
-  color: #9a9aa4;
-  font-size: 10.5px;
-}
-
 .composer-status {
   min-height: 20px !important;
   margin: 0 10px !important;
@@ -2043,12 +1096,39 @@ html, body {
   color: #b42318 !important;
 }
 
-/* Gradio 6 can mount several queue progress overlays for one submit event.
-   The app already reports model loading/inference time in the chat message;
-   keep those useful timings and remove only Gradio's duplicated overlay. */
-.progress-text,
-.wrap:has(> .progress-text) {
+.composer-status .time-chip.running {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  color: #555560 !important;
+}
+
+.status-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #111827;
+  animation: vivqa-pulse 1.1s ease-in-out infinite;
+}
+
+.live-elapsed {
+  color: #898994;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes vivqa-pulse {
+  0%, 100% { opacity: .35; transform: scale(.82); }
+  50% { opacity: 1; transform: scale(1); }
+}
+
+/* Hide duplicate queue overlays on output components. The composer keeps its
+   own queue indicator so a queued request never looks frozen. */
+.sidebar-history-wrap > .wrap.center.full.translucent,
+#chat-thread > .wrap.default.minimal.translucent,
+.composer-status > .wrap.center.full.translucent {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 footer {
@@ -2065,14 +1145,40 @@ footer {
   }
   .gpt-topbar {
     padding: 7px 12px !important;
+    gap: 7px !important;
+  }
+  .topbar-title-wrap {
+    flex: 0 0 54px !important;
+    min-width: 54px !important;
   }
   .topbar-title {
-    min-width: 82px !important;
+    min-width: 54px !important;
+    font-size: 13px !important;
+  }
+  .topbar-spacer-wrap {
+    display: none !important;
+  }
+  .mobile-new-chat {
+    display: inline-flex !important;
+    flex: 0 0 36px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid #e4e4e7 !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-shadow: none !important;
+    font-size: 20px !important;
   }
   .topbar-model-picker {
     flex: 1 1 auto !important;
     min-width: 0 !important;
     padding-left: 7px !important;
+  }
+  .topbar-model-status {
+    display: none !important;
   }
   .model-picker-label {
     display: none !important;
@@ -2105,6 +1211,17 @@ PASTE_IMAGE_JS = """
   if (window.__vivqaPasteBound) return;
   window.__vivqaPasteBound = true;
 
+  // Remove only obsolete ViVQA keys. Gradio otherwise attempts to decrypt
+  // these values with the new schema on every reload and logs noisy errors.
+  [
+    'vivqa_conversations_v1',
+    'vivqa_active_conversation_v1',
+    'vivqa_conversations_v2',
+    'vivqa_active_conversation_v2',
+    'vivqa_conversations_v3',
+    'vivqa_active_conversation_v3',
+  ].forEach((key) => window.localStorage.removeItem(key));
+
   const pasteImage = (event) => {
     const items = Array.from(event.clipboardData?.items || []);
     const imageItem = items.find(
@@ -2136,254 +1253,27 @@ PASTE_IMAGE_JS = """
   };
 
   window.addEventListener('paste', pasteImage, true);
+
+  // The server yields a status before model loading. Keep the elapsed time
+  // moving in the browser even while Python is busy loading or generating.
+  window.setInterval(() => {
+    const now = Date.now();
+    const timers = document.querySelectorAll('.live-elapsed[data-start]');
+    timers.forEach((node) => {
+      const started = Number(node.dataset.start || now);
+      const elapsed = Math.max(0, (now - started) / 1000);
+      node.textContent = `${elapsed.toFixed(1)} giây`;
+    });
+    const running = timers.length > 0;
+    document.querySelectorAll('#chat-composer .stop-button').forEach((button) => {
+      button.classList.toggle('vivqa-running', running);
+    });
+    document.querySelectorAll('#chat-composer [data-testid="submit-button"]').forEach((button) => {
+      button.style.display = running ? 'none' : '';
+    });
+  }, 250);
 })();
 """
-
-
-def initial_chat() -> list[dict[str, str]]:
-    """Return a fresh welcome conversation for the public demo."""
-    return [
-        {
-            "role": "assistant",
-            "content": (
-                "**Xin chào, mình có thể giúp bạn hiểu nội dung trong ảnh.**\n\n"
-                "Hãy đính kèm một hình ảnh, nhập câu hỏi bằng tiếng Việt rồi nhấn **Gửi**. "
-                "Bạn có thể hỏi về vật thể, màu sắc, vị trí, hành động hoặc nội dung tổng quát."
-            ),
-        }
-    ]
-
-
-def answer_chat(
-    image,
-    question: str,
-    model_choice: str,
-    response_style: str,
-    max_new_tokens: int,
-    history: list[dict] | None,
-    conversation: list[dict] | None,
-) -> tuple[list[dict], str, str, list[dict], list[list], str]:
-    """Run inference and append the exchange to a ChatGPT-style conversation."""
-    messages = list(conversation or product_initial_chat())
-    clean_question = (question or "").strip()
-    if clean_question:
-        messages.append({"role": "user", "content": clean_question})
-
-    result, timing, records, rows, status = answer(
-        image,
-        question,
-        model_choice,
-        response_style,
-        max_new_tokens,
-        history,
-    )
-    messages.append({"role": "assistant", "content": result})
-    return messages, "", timing, records, rows, status
-
-
-def reset_chat():
-    """Start a clean conversation and clear the current image and session data."""
-    return (
-        None,
-        "",
-        initial_chat(),
-        time_badge("Sẵn sàng", "idle"),
-        image_summary(None),
-        [],
-        [],
-        system_status_html(),
-    )
-
-
-def _create_demo_v1() -> gr.Blocks:
-    """Build a restrained conversational interface inspired by modern AI chat apps."""
-    with gr.Blocks(title=APP_TITLE, analytics_enabled=False) as demo:
-        history_state = gr.State([])
-
-        with gr.Row(elem_classes="chat-shell"):
-            with gr.Column(scale=1, min_width=258, elem_classes="chat-sidebar"):
-                gr.HTML(
-                    """
-                    <div class="brand-lockup">
-                      <div class="brand-mark">VQ</div>
-                      <div>
-                        <div class="brand-name">ViVQA Assistant</div>
-                        <div class="brand-caption">Vietnamese Visual Question Answering</div>
-                      </div>
-                    </div>
-                    """
-                )
-                new_chat = gr.Button(
-                    "+  Cuộc trò chuyện mới",
-                    elem_classes="new-chat-button",
-                )
-                gr.HTML('<div class="settings-label">Thiết lập</div>')
-                with gr.Column(elem_classes=["sidebar-settings"]):
-                    model_choice = gr.Dropdown(
-                        choices=list(ADAPTERS),
-                        value=STUDENT_LABEL,
-                        label="Mô hình",
-                    )
-                    response_style = gr.Radio(
-                        choices=["Mô tả chi tiết", "Cân bằng", "Trả lời ngắn"],
-                        value="Cân bằng",
-                        label="Cách trả lời",
-                    )
-                    max_new_tokens = gr.Slider(
-                        minimum=16,
-                        maximum=160,
-                        value=96,
-                        step=8,
-                        label="Độ dài tối đa",
-                    )
-                gr.HTML(
-                    """
-                    <div class="sidebar-note">
-                      Student 2B phù hợp cho Colab T4. Khi đổi model, hệ thống sẽ giải phóng model cũ trước khi nạp model mới.
-                    </div>
-                    """
-                )
-
-            with gr.Column(scale=4, elem_classes="chat-main"):
-                gr.HTML(
-                    """
-                    <header class="chat-topbar">
-                      <div class="chat-topbar-title">Hỏi đáp hình ảnh tiếng Việt</div>
-                      <div class="model-pill">Qwen2-VL · Knowledge Distillation</div>
-                    </header>
-                    """
-                )
-
-                with gr.Column(elem_classes="chat-stage"):
-                    chatbot = gr.Chatbot(
-                        value=initial_chat(),
-                        height=510,
-                        buttons=["copy"],
-                        render_markdown=True,
-                        show_label=False,
-                        elem_id="chat-thread",
-                    )
-
-                    with gr.Row(elem_classes="suggestion-row"):
-                        suggestion_1 = gr.Button(
-                            "Mô tả bức ảnh",
-                            elem_classes="suggestion-button",
-                        )
-                        suggestion_2 = gr.Button(
-                            "Có những vật thể nào?",
-                            elem_classes="suggestion-button",
-                        )
-                        suggestion_3 = gr.Button(
-                            "Chuyện gì đang xảy ra?",
-                            elem_classes="suggestion-button",
-                        )
-
-                    with gr.Row(elem_classes="chat-composer"):
-                        image = gr.Image(
-                            type="pil",
-                            show_label=False,
-                            height=82,
-                            width=92,
-                            min_width=92,
-                            sources=["upload", "clipboard"],
-                            buttons=[],
-                            placeholder="Thêm ảnh",
-                            elem_id="composer-image",
-                        )
-                        question = gr.Textbox(
-                            show_label=False,
-                            placeholder="Hỏi bất kỳ điều gì về hình ảnh...",
-                            lines=2,
-                            container=False,
-                            scale=8,
-                            elem_classes="chat-input",
-                        )
-                        submit = gr.Button(
-                            "Gửi",
-                            variant="primary",
-                            scale=0,
-                            min_width=58,
-                            elem_classes="send-button",
-                        )
-
-                    with gr.Row(elem_classes="composer-meta"):
-                        image_meta = gr.HTML(
-                            image_summary(None),
-                            elem_classes="image-meta-output",
-                        )
-                        timing = gr.HTML(
-                            time_badge("Sẵn sàng", "idle"),
-                            elem_classes="time-chip-output",
-                        )
-                    gr.HTML(
-                        '<div class="privacy-note">Câu trả lời được tạo bởi mô hình thị giác–ngôn ngữ và có thể chưa hoàn toàn chính xác.</div>'
-                    )
-
-                with gr.Column(visible=False):
-                    history_table = gr.Dataframe(
-                        headers=HISTORY_HEADERS,
-                        datatype=["str", "str", "str", "str", "number"],
-                        value=[],
-                        interactive=False,
-                    )
-                    system_status = gr.HTML(system_status_html())
-
-        inputs = [
-            image,
-            question,
-            model_choice,
-            response_style,
-            max_new_tokens,
-            history_state,
-            chatbot,
-        ]
-        outputs = [
-            chatbot,
-            question,
-            timing,
-            history_state,
-            history_table,
-            system_status,
-        ]
-        submit.click(
-            fn=answer_chat,
-            inputs=inputs,
-            outputs=outputs,
-            show_progress="hidden",
-        )
-        question.submit(
-            fn=answer_chat,
-            inputs=inputs,
-            outputs=outputs,
-            show_progress="hidden",
-        )
-        image.change(fn=image_summary, inputs=image, outputs=image_meta, queue=False)
-        new_chat.click(
-            fn=reset_chat,
-            outputs=[
-                image,
-                question,
-                chatbot,
-                timing,
-                image_meta,
-                history_state,
-                history_table,
-                system_status,
-            ],
-            queue=False,
-        )
-        suggestion_1.click(lambda: "Hãy mô tả bức ảnh này.", outputs=question, queue=False)
-        suggestion_2.click(
-            lambda: "Trong ảnh có những vật thể nào?",
-            outputs=question,
-            queue=False,
-        )
-        suggestion_3.click(
-            lambda: "Chuyện gì đang xảy ra trong ảnh?",
-            outputs=question,
-            queue=False,
-        )
-    return demo
 
 
 def product_initial_chat() -> list[dict[str, str]]:
@@ -2459,19 +1349,202 @@ def chat_user_content(image_path: str | None, question: str):
     return content if len(content) > 1 else content[0]
 
 
-def sidebar_history_html(items: list[str] | None) -> str:
-    """Render a compact, session-local question history for the sidebar."""
-    titles = list(items or [])
-    if not titles:
-        body = '<div class="history-empty">Chưa có câu hỏi.</div>'
+def new_conversation() -> dict:
+    """Create a serializable browser-persisted conversation."""
+    now = datetime.now().astimezone().isoformat(timespec="seconds")
+    return {
+        "id": uuid.uuid4().hex,
+        "title": "Cuộc trò chuyện mới",
+        "created_at": now,
+        "updated_at": now,
+        "messages": product_initial_chat(),
+        "active_image_path": None,
+        "records": [],
+        "model_choice": STUDENT_LABEL,
+        "response_style": "Cân bằng",
+        "max_new_tokens": 96,
+    }
+
+
+def sanitize_saved_messages(messages: list[dict] | None) -> list[dict]:
+    """Remove stale temporary image references after a Colab/runtime restart."""
+    sanitized: list[dict] = []
+    for message in list(messages or []):
+        if not isinstance(message, dict):
+            continue
+        clean_message = dict(message)
+        content = clean_message.get("content")
+        if isinstance(content, list):
+            clean_content = []
+            for part in content:
+                if isinstance(part, dict) and part.get("path"):
+                    if not Path(str(part["path"])).is_file():
+                        continue
+                clean_content.append(part)
+            clean_message["content"] = clean_content
+        sanitized.append(clean_message)
+    return sanitized
+
+
+def normalize_conversations(conversations: list[dict] | None) -> list[dict]:
+    """Discard malformed browser state and cap its size."""
+    valid: list[dict] = []
+    for item in list(conversations or []):
+        if not isinstance(item, dict) or not item.get("id"):
+            continue
+        item = dict(item)
+        item["messages"] = sanitize_saved_messages(item.get("messages"))
+        item["records"] = list(item.get("records") or [])[-100:]
+        item["title"] = str(item.get("title") or "Cuộc trò chuyện mới")
+        item["model_choice"] = (
+            item.get("model_choice") if item.get("model_choice") in ADAPTERS else STUDENT_LABEL
+        )
+        item["response_style"] = (
+            item.get("response_style")
+            if item.get("response_style") in {"Mô tả chi tiết", "Cân bằng", "Trả lời ngắn"}
+            else "Cân bằng"
+        )
+        item["max_new_tokens"] = int(item.get("max_new_tokens") or 96)
+        active_image_path = item.get("active_image_path")
+        if active_image_path and not Path(str(active_image_path)).is_file():
+            item["active_image_path"] = None
+        valid.append(item)
+    return valid[:30]
+
+
+def conversation_choices(conversations: list[dict]) -> list[tuple[str, str]]:
+    """Return label/value pairs for the sidebar conversation picker."""
+    choices: list[tuple[str, str]] = []
+    for item in conversations:
+        title = " ".join(str(item.get("title") or "Cuộc trò chuyện mới").split())
+        short = title if len(title) <= 34 else f"{title[:33]}…"
+        choices.append((short, str(item["id"])))
+    return choices
+
+
+def conversation_picker_update(conversations: list[dict], active_id: str):
+    return gr.update(choices=conversation_choices(conversations), value=active_id)
+
+
+def find_conversation(conversations: list[dict], conversation_id: str | None) -> dict:
+    for item in conversations:
+        if item.get("id") == conversation_id:
+            return item
+    return conversations[0]
+
+
+def save_conversation(conversations: list[dict], updated: dict) -> list[dict]:
+    """Upsert one conversation and keep recently updated chats first."""
+    updated = dict(updated)
+    updated["updated_at"] = datetime.now().astimezone().isoformat(timespec="seconds")
+    return [updated, *[item for item in conversations if item.get("id") != updated["id"]]][:30]
+
+
+def title_from_question(question: str) -> str:
+    title = " ".join(question.split()).strip()
+    return title if len(title) <= 48 else f"{title[:47]}…"
+
+
+def model_readiness_html(model_choice: str) -> str:
+    if model_choice == _active_model_choice and model_choice in _inference_engines:
+        text, state = "Đã sẵn sàng", "ready"
     else:
-        rows = []
-        for title in titles[:20]:
-            clean_title = " ".join(str(title).split())
-            short_title = clean_title if len(clean_title) <= 38 else f"{clean_title[:37]}…"
-            rows.append(f'<div class="history-item" title="{html.escape(clean_title)}">{html.escape(short_title)}</div>')
-        body = "".join(rows)
-    return f'<div class="history-panel"><div class="history-heading">Câu hỏi đã gửi</div>{body}</div>'
+        text, state = "Sẵn sàng", "waiting"
+    return (
+        f'<div class="model-readiness {state}"><span></span>'
+        f'{html.escape(text)}</div>'
+    )
+
+
+def active_image_html(image_path: str | None) -> str:
+    """Render a small clean thumbnail without Gradio's image toolbar."""
+    if not image_path or not Path(str(image_path)).is_file():
+        return ""
+    try:
+        with Image.open(image_path) as source:
+            preview = source.convert("RGB")
+            preview.thumbnail((96, 96))
+            buffer = io.BytesIO()
+            preview.save(buffer, format="JPEG", quality=82, optimize=True)
+        encoded = base64.b64encode(buffer.getvalue()).decode("ascii")
+    except Exception:
+        return ""
+    return (
+        '<div class="pinned-image">'
+        f'<img src="data:image/jpeg;base64,{encoded}" alt="Ảnh đang dùng">'
+        '<div><strong>Ảnh đang dùng</strong><span>Câu hỏi tiếp theo vẫn dùng ảnh này</span></div>'
+        '</div>'
+    )
+
+
+def image_component_update(image_path: str | None):
+    value = active_image_html(image_path)
+    return gr.update(value=value, visible=bool(value))
+
+
+def image_clear_button_update(image_path: str | None):
+    return gr.update(visible=bool(image_path))
+
+
+def conversation_view(conversations: list[dict] | None, active_id: str | None):
+    """Load a saved conversation into every visible control."""
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    conversation = find_conversation(sessions, active_id)
+    active_id = str(conversation["id"])
+    image_path = conversation.get("active_image_path")
+    records = list(conversation.get("records") or [])
+    model_choice = str(conversation.get("model_choice") or STUDENT_LABEL)
+    response_style = str(conversation.get("response_style") or "Cân bằng")
+    max_new_tokens = int(conversation.get("max_new_tokens") or 96)
+    return (
+        {"text": "", "files": []},
+        list(conversation.get("messages") or []),
+        time_badge("Sẵn sàng", "idle"),
+        image_path,
+        image_component_update(image_path),
+        image_clear_button_update(image_path),
+        records,
+        history_rows(records),
+        system_status_html(),
+        sessions,
+        active_id,
+        conversation_picker_update(sessions, active_id),
+        model_choice,
+        response_style,
+        max_new_tokens,
+        model_readiness_html(model_choice),
+    )
+
+
+def create_product_chat(conversations: list[dict] | None):
+    """Start a new chat without deleting older conversations."""
+    sessions = normalize_conversations(conversations)
+    conversation = new_conversation()
+    sessions = [conversation, *sessions][:30]
+    return conversation_view(sessions, conversation["id"])
+
+
+def delete_product_chat(conversations: list[dict] | None, active_id: str | None):
+    """Delete only the selected conversation and select the next one."""
+    sessions = [
+        item for item in normalize_conversations(conversations) if item.get("id") != active_id
+    ]
+    if not sessions:
+        sessions = [new_conversation()]
+    return conversation_view(sessions, sessions[0]["id"])
+
+
+def clear_active_image(conversations: list[dict] | None, active_id: str | None):
+    """Detach the pinned image while preserving the current chat."""
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    conversation = dict(find_conversation(sessions, active_id))
+    conversation["active_image_path"] = None
+    sessions = save_conversation(sessions, conversation)
+    return None, image_component_update(None), image_clear_button_update(None), sessions
 
 
 def answer_chat_gpt(
@@ -2482,125 +1555,190 @@ def answer_chat_gpt(
     active_image_path: str | None,
     history: list[dict] | None,
     conversation: list[dict] | None,
-    question_titles: list[str] | None,
-) -> tuple[
-    list[dict], dict, str, str | None, list[dict], list[list], str, list[str], str
-]:
-    """Run inference, update the conversation, and retain sidebar question titles."""
+    conversations: list[dict] | None,
+    active_conversation_id: str | None,
+):
+    """Yield an immediate pending state, then run one visual-answer request."""
     messages = list(conversation or product_initial_chat())
     clean_question, attached_image_path = composer_value(composer)
     selected_image_path = attached_image_path or active_image_path
     records = list(history or [])
-    titles = list(question_titles or [])
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    active = dict(find_conversation(sessions, active_conversation_id))
+    active_id = str(active["id"])
 
     if attached_image_path and not clean_question:
-        clean_question = "Mô tả chi tiết hình ảnh này."
+        clean_question = "Mô tả hình ảnh này."
 
     if not clean_question:
-        return (
+        yield (
             messages,
             composer if isinstance(composer, dict) else {"text": "", "files": []},
             time_badge("Nhập câu hỏi trước", "error"),
             active_image_path,
+            image_component_update(active_image_path),
+            image_clear_button_update(active_image_path),
             records,
             history_rows(records),
             system_status_html(),
-            titles,
-            sidebar_history_html(titles),
+            sessions,
+            active_id,
+            conversation_picker_update(sessions, active_id),
+            model_readiness_html(model_choice),
         )
+        return
     if not selected_image_path:
-        return (
+        yield (
             messages,
             {"text": clean_question, "files": []},
             time_badge("Đính kèm ảnh trước", "error"),
             active_image_path,
+            image_component_update(active_image_path),
+            image_clear_button_update(active_image_path),
             records,
             history_rows(records),
             system_status_html(),
-            titles,
-            sidebar_history_html(titles),
+            sessions,
+            active_id,
+            conversation_picker_update(sessions, active_id),
+            model_readiness_html(model_choice),
         )
+        return
 
-    try:
-        image = open_composer_image(selected_image_path)
-    except Exception as exc:
-        return (
-            messages,
-            {
-                "text": clean_question,
-                "files": [attached_image_path] if attached_image_path else [],
-            },
-            time_badge(f"Không thể đọc ảnh: {exc}", "error"),
-            active_image_path,
-            records,
-            history_rows(records),
-            system_status_html(),
-            titles,
-            sidebar_history_html(titles),
-        )
-
+    request_started = time.time()
     context = conversation_context(messages)
-    previous_record_count = len(records)
-
-    result, timing, records, rows, status = answer(
-        image,
-        clean_question,
-        model_choice,
-        response_style,
-        max_new_tokens,
-        history,
-        conversation_context=context,
-    )
     messages.append(
         {
             "role": "user",
             "content": chat_user_content(attached_image_path, clean_question),
         }
     )
-
-    latest = (
-        records[-1]
-        if len(records) > previous_record_count
-        and records[-1].get("question") == clean_question
-        else None
+    messages.append({"role": "assistant", "content": "_Đang xử lý ảnh…_"})
+    active.update(
+        {
+            "messages": messages,
+            "active_image_path": selected_image_path,
+            "records": records,
+            "model_choice": model_choice,
+            "response_style": response_style,
+            "max_new_tokens": int(max_new_tokens),
+        }
     )
-    if latest:
-        load_seconds = float(latest.get("load_seconds", 0) or 0)
-        inference_seconds = float(latest.get("inference_seconds", 0) or 0)
-        timing_text = f"{model_choice} · suy luận {inference_seconds:.1f} giây"
-        if load_seconds:
-            timing_text = f"{model_choice} · nạp {load_seconds:.1f} giây · suy luận {inference_seconds:.1f} giây"
-        assistant_content = f"{result}\n\n*{timing_text}*"
-    else:
-        assistant_content = result
-    messages.append({"role": "assistant", "content": assistant_content})
+    if active.get("title") == "Cuộc trò chuyện mới":
+        active["title"] = title_from_question(clean_question)
+    loading_text = (
+        f"Đang phân tích ảnh bằng {model_choice}"
+        if model_choice == _active_model_choice
+        else f"Đang nạp {model_choice}"
+    )
 
-    titles = [clean_question, *[item for item in titles if item != clean_question]][:20]
-    return (
+    # This first yield makes the sent message and live timer visible before
+    # the potentially long model-loading call starts.
+    yield (
+        messages,
+        {"text": "", "files": []},
+        running_badge(loading_text, request_started),
+        selected_image_path,
+        image_component_update(selected_image_path),
+        image_clear_button_update(selected_image_path),
+        records,
+        history_rows(records),
+        system_status_html(),
+        sessions,
+        active_id,
+        conversation_picker_update(sessions, active_id),
+        model_readiness_html(model_choice),
+    )
+
+    try:
+        image = open_composer_image(selected_image_path)
+        engine, load_seconds = get_inference(model_choice)
+        yield (
+            messages,
+            {"text": "", "files": []},
+            running_badge("Đang sinh câu trả lời", request_started),
+            selected_image_path,
+            image_component_update(selected_image_path),
+            image_clear_button_update(selected_image_path),
+            records,
+            history_rows(records),
+            system_status_html(),
+            sessions,
+            active_id,
+            conversation_picker_update(sessions, active_id),
+            model_readiness_html(model_choice),
+        )
+        previous_record_count = len(records)
+        result, timing, records, rows, status = answer(
+            image,
+            clean_question,
+            model_choice,
+            response_style,
+            max_new_tokens,
+            records,
+            conversation_context=context,
+            preloaded_engine=engine,
+            preloaded_load_seconds=load_seconds,
+        )
+        latest = (
+            records[-1]
+            if len(records) > previous_record_count
+            and records[-1].get("question") == clean_question
+            else None
+        )
+        if latest:
+            load_seconds = float(latest.get("load_seconds", 0) or 0)
+            inference_seconds = float(latest.get("inference_seconds", 0) or 0)
+            total_seconds = time.time() - request_started
+            timing_parts = [f"suy luận {inference_seconds:.1f} giây"]
+            if load_seconds:
+                timing_parts.insert(0, f"nạp {load_seconds:.1f} giây")
+            timing_parts.append(f"tổng {total_seconds:.1f} giây")
+            if latest.get("retried_prompt_echo"):
+                timing_parts.append("đã thử lại câu lệnh")
+            assistant_content = f"{result}\n\n*{model_choice} · {' · '.join(timing_parts)}*"
+        else:
+            assistant_content = result
+        messages = list(messages)
+        messages[-1] = {"role": "assistant", "content": assistant_content}
+    except Exception as exc:
+        print(f"[ViVQA] Chat request failed: {exc}", file=sys.stderr, flush=True)
+        timing = time_badge("", "idle")
+        status = system_status_html()
+        rows = history_rows(records)
+        messages = list(messages)
+        messages[-1] = {
+            "role": "assistant",
+            "content": friendly_inference_error(exc),
+        }
+
+    active.update(
+        {
+            "messages": messages,
+            "active_image_path": selected_image_path,
+            "records": records,
+            "model_choice": model_choice,
+            "response_style": response_style,
+            "max_new_tokens": int(max_new_tokens),
+        }
+    )
+    sessions = save_conversation(sessions, active)
+    yield (
         messages,
         {"text": "", "files": []},
         timing,
         selected_image_path,
+        image_component_update(selected_image_path),
+        image_clear_button_update(selected_image_path),
         records,
         rows,
         status,
-        titles,
-        sidebar_history_html(titles),
-    )
-
-
-def reset_product_chat():
-    """Reset the product workspace without reintroducing legacy UI copy."""
-    return (
-        {"text": "", "files": []},
-        product_initial_chat(),
-        time_badge("Sẵn sàng", "idle"),
-        None,
-        [],
-        [],
-        system_status_html(),
-        [],
-        sidebar_history_html([]),
+        sessions,
+        active_id,
+        conversation_picker_update(sessions, active_id),
+        model_readiness_html(model_choice),
     )
 
 
@@ -2612,8 +1750,18 @@ def create_demo() -> gr.Blocks:
         fill_height=True,
         fill_width=True,
     ) as demo:
+        initial_conversation = new_conversation()
         history_state = gr.State([])
-        question_titles_state = gr.State([])
+        conversations_state = gr.BrowserState(
+            [initial_conversation],
+            storage_key="vivqa_conversations_v4",
+            secret="vivqa-conversations-v4-stable-key",
+        )
+        active_conversation_id_state = gr.BrowserState(
+            initial_conversation["id"],
+            storage_key="vivqa_active_conversation_v4",
+            secret="vivqa-active-chat-v4-stable-key",
+        )
         active_image_path_state = gr.State(None)
 
         with gr.Row(elem_classes="gpt-shell"):
@@ -2627,7 +1775,7 @@ def create_demo() -> gr.Blocks:
                     """
                 )
                 new_chat = gr.Button(
-                    "↻  Bắt đầu lại",
+                    "＋  Cuộc trò chuyện mới",
                     elem_classes="sidebar-new-chat",
                 )
                 with gr.Accordion(
@@ -2647,15 +1795,24 @@ def create_demo() -> gr.Blocks:
                         step=8,
                         label="Độ dài tối đa",
                     )
-                history_html = gr.HTML(
-                    sidebar_history_html([]),
-                    elem_classes="sidebar-history-wrap",
+                gr.HTML('<div class="history-heading">Cuộc trò chuyện</div>')
+                conversation_selector = gr.Radio(
+                    choices=[("Cuộc trò chuyện mới", initial_conversation["id"])],
+                    value=initial_conversation["id"],
+                    show_label=False,
+                    container=False,
+                    elem_classes="conversation-selector",
                 )
+                delete_chat = gr.Button("Xóa cuộc trò chuyện", elem_classes="sidebar-delete-chat")
 
             with gr.Column(elem_classes="gpt-main"):
                 with gr.Row(elem_classes="gpt-topbar"):
-                    gr.HTML('<div class="topbar-title">ViVQA</div>')
-                    gr.HTML("<div></div>", elem_classes="topbar-spacer")
+                    gr.HTML(
+                        '<div class="topbar-title">ViVQA</div>',
+                        elem_classes="topbar-title-wrap",
+                    )
+                    gr.HTML("<div></div>", elem_classes="topbar-spacer-wrap")
+                    mobile_new_chat = gr.Button("＋", elem_classes="mobile-new-chat")
                     with gr.Row(elem_classes="topbar-model-picker"):
                         gr.HTML('<span class="model-picker-label">Mô hình</span>')
                         model_choice = gr.Dropdown(
@@ -2664,15 +1821,19 @@ def create_demo() -> gr.Blocks:
                             label="Mô hình",
                             show_label=False,
                             container=False,
-                            min_width=218,
+                            min_width=150,
                             elem_classes="topbar-model",
                         )
+                    model_status = gr.HTML(
+                        model_readiness_html(STUDENT_LABEL),
+                        elem_classes="topbar-model-status",
+                    )
 
                 with gr.Column(elem_classes="gpt-stage"):
                     chatbot = gr.Chatbot(
                         value=product_initial_chat(),
                         height=460,
-                        buttons=None,
+                        buttons=[],
                         render_markdown=True,
                         group_consecutive_messages=True,
                         allow_file_downloads=False,
@@ -2681,6 +1842,17 @@ def create_demo() -> gr.Blocks:
                     )
 
                     with gr.Column(elem_classes="composer-area"):
+                        with gr.Row(elem_classes="active-image-strip"):
+                            active_image_preview = gr.HTML(
+                                value="",
+                                visible=False,
+                                elem_classes="active-image-preview",
+                            )
+                            clear_image = gr.Button(
+                                "Bỏ ảnh",
+                                visible=False,
+                                elem_classes="clear-active-image",
+                            )
                         timing = gr.HTML(
                             time_badge("Sẵn sàng", "idle"),
                             elem_classes="composer-status",
@@ -2696,12 +1868,9 @@ def create_demo() -> gr.Blocks:
                             container=False,
                             interactive=True,
                             submit_btn="↑",
-                            stop_btn=False,
+                            stop_btn="■",
                             elem_id="chat-composer",
                             elem_classes="chat-composer-gpt",
-                        )
-                        gr.HTML(
-                            '<div class="composer-note">Ctrl+V để dán ảnh · Enter để gửi</div>'
                         )
 
                 with gr.Column(visible=False, elem_classes="gpt-hidden"):
@@ -2721,37 +1890,164 @@ def create_demo() -> gr.Blocks:
             active_image_path_state,
             history_state,
             chatbot,
-            question_titles_state,
+            conversations_state,
+            active_conversation_id_state,
         ]
         outputs = [
             chatbot,
             composer,
             timing,
             active_image_path_state,
+            active_image_preview,
+            clear_image,
             history_state,
             history_table,
             system_status,
-            question_titles_state,
-            history_html,
+            conversations_state,
+            active_conversation_id_state,
+            conversation_selector,
+            model_status,
         ]
-        composer.submit(
+        submit_event = composer.submit(
             fn=answer_chat_gpt,
             inputs=inputs,
             outputs=outputs,
-            show_progress="hidden",
+            show_progress="minimal",
         )
         new_chat.click(
-            fn=reset_product_chat,
+            fn=create_product_chat,
+            inputs=conversations_state,
             outputs=[
                 composer,
                 chatbot,
                 timing,
                 active_image_path_state,
+                active_image_preview,
+                clear_image,
                 history_state,
                 history_table,
                 system_status,
-                question_titles_state,
-                history_html,
+                conversations_state,
+                active_conversation_id_state,
+                conversation_selector,
+                model_choice,
+                response_style,
+                max_new_tokens,
+                model_status,
+            ],
+            queue=False,
+            cancels=[submit_event],
+        )
+        mobile_new_chat.click(
+            fn=create_product_chat,
+            inputs=conversations_state,
+            outputs=[
+                composer,
+                chatbot,
+                timing,
+                active_image_path_state,
+                active_image_preview,
+                clear_image,
+                history_state,
+                history_table,
+                system_status,
+                conversations_state,
+                active_conversation_id_state,
+                conversation_selector,
+                model_choice,
+                response_style,
+                max_new_tokens,
+                model_status,
+            ],
+            queue=False,
+            cancels=[submit_event],
+        )
+        delete_chat.click(
+            fn=delete_product_chat,
+            inputs=[conversations_state, active_conversation_id_state],
+            outputs=[
+                composer,
+                chatbot,
+                timing,
+                active_image_path_state,
+                active_image_preview,
+                clear_image,
+                history_state,
+                history_table,
+                system_status,
+                conversations_state,
+                active_conversation_id_state,
+                conversation_selector,
+                model_choice,
+                response_style,
+                max_new_tokens,
+                model_status,
+            ],
+            queue=False,
+            cancels=[submit_event],
+        )
+        conversation_selector.input(
+            fn=conversation_view,
+            inputs=[conversations_state, conversation_selector],
+            outputs=[
+                composer,
+                chatbot,
+                timing,
+                active_image_path_state,
+                active_image_preview,
+                clear_image,
+                history_state,
+                history_table,
+                system_status,
+                conversations_state,
+                active_conversation_id_state,
+                conversation_selector,
+                model_choice,
+                response_style,
+                max_new_tokens,
+                model_status,
+            ],
+            queue=False,
+            cancels=[submit_event],
+        )
+        clear_image.click(
+            fn=clear_active_image,
+            inputs=[conversations_state, active_conversation_id_state],
+            outputs=[
+                active_image_path_state,
+                active_image_preview,
+                clear_image,
+                conversations_state,
+            ],
+            queue=False,
+            cancels=[submit_event],
+        )
+        model_choice.change(
+            fn=model_readiness_html,
+            inputs=model_choice,
+            outputs=model_status,
+            queue=False,
+        )
+        demo.load(
+            fn=conversation_view,
+            inputs=[conversations_state, active_conversation_id_state],
+            outputs=[
+                composer,
+                chatbot,
+                timing,
+                active_image_path_state,
+                active_image_preview,
+                clear_image,
+                history_state,
+                history_table,
+                system_status,
+                conversations_state,
+                active_conversation_id_state,
+                conversation_selector,
+                model_choice,
+                response_style,
+                max_new_tokens,
+                model_status,
             ],
             queue=False,
         )

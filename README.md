@@ -113,10 +113,11 @@ python app.py
 
 Truy cập `http://127.0.0.1:7860`. Lần chạy model đầu tiên sẽ lâu hơn vì phải nạp base model và adapter; các câu tiếp theo không phải nạp lại.
 
-Để tạo URL tạm thời khi chạy trên Colab mà không phụ thuộc `gradio.live`:
+Để tạo URL tạm thời khi chạy trên Colab, dùng luôn cơ chế chia sẻ chính thức
+của Gradio:
 
 ```bash
-python -u scripts/run_colab_demo.py
+python -u app.py --share --host 0.0.0.0
 ```
 
 ### Tải trước để chạy offline
@@ -140,8 +141,7 @@ toàn bộ notebook. Notebook sẽ:
 - mount Google Drive;
 - chép mã nguồn và hai adapter vào `/content` để giảm độ trễ;
 - dùng base model đang lưu trên Drive mà không nhân đôi hơn 20 GB dữ liệu;
-- cài dependencies, kiểm tra nguồn model và mở Gradio qua public URL tạm thời;
-- tự kết nối lại tunnel nếu đường truyền công khai bị ngắt, không làm dừng server Gradio.
+- cài dependencies, kiểm tra nguồn model và mở Gradio qua public URL tạm thời.
 
 Nếu không dùng bản trên Drive, có thể clone repository rồi chạy thủ công:
 
@@ -152,13 +152,19 @@ Nếu không dùng bản trên Drive, có thể clone repository rồi chạy th
 ```
 
 ```python
-!python -u scripts/run_colab_demo.py
+!python -u app.py --share --host 0.0.0.0
 ```
 
-Launcher này giữ Gradio ở `127.0.0.1:7860` và tạo tunnel riêng qua
-`localhost.run`. Hãy mở URL nằm sau dòng `DEMO_URL:` và giữ cell cuối tiếp tục
-chạy. Không dùng lại URL của lần chạy trước vì mỗi phiên Colab sẽ tạo một URL
-tạm thời mới.
+Hãy mở URL nằm sau dòng `Running on public URL` và giữ cell cuối tiếp tục
+chạy. URL này là tạm thời; mỗi phiên Colab sẽ tạo một URL mới. Script
+`scripts/run_colab_demo.py` vẫn được giữ lại như một lệnh tương thích, nhưng
+chỉ gọi lại `app.py --share` và không tạo tunnel `localhost.run` riêng.
+
+Giao diện demo lưu tối đa 30 cuộc trò chuyện trong trình duyệt, tự đặt tên từ
+câu hỏi đầu tiên, cho phép xóa từng cuộc trò chuyện và tiếp tục hỏi về ảnh đang dùng. Khi gửi,
+giao diện hiện ngay câu hỏi, trạng thái nạp/suy luận và bộ đếm thời gian; nếu
+đang dùng đúng model đã nạp thì model không được nạp lại. Trên T4, ứng dụng vẫn
+chỉ giữ **một model trong VRAM tại một thời điểm** để tránh thiếu bộ nhớ.
 
 Với repository GitHub đang để **Private**, Colab cần được xác thực GitHub trước khi clone. Các model và dataset Hugging Face hiện là public nên không cần token để chạy demo.
 

@@ -58,6 +58,22 @@ MODELS = {
 class VQAModelLoader:
     """Load Qwen2-VL and attach the output adapter produced by training."""
 
+    @staticmethod
+    def _prepare_generation_config(model: torch.nn.Module) -> None:
+        """Keep deterministic decoding from emitting sampling warnings.
+
+        Qwen's base generation config may contain temperature/top-p/top-k even
+        though this project decodes with ``do_sample=False``.  Transformers
+        warns about those inactive sampling fields on every first request;
+        clearing them does not change deterministic output.
+        """
+        generation_config = getattr(model, "generation_config", None)
+        if generation_config is None or getattr(generation_config, "do_sample", False):
+            return
+        for name in ("temperature", "top_p", "top_k"):
+            if hasattr(generation_config, name):
+                setattr(generation_config, name, None)
+
     def __init__(
         self,
         device: str = "auto",
@@ -113,9 +129,11 @@ class VQAModelLoader:
                 ),
             )
         elif self.device == "cuda":
-            kwargs.update(device_map="auto", max_memory=max_memory, torch_dtype=torch.float16)
+            # ``dtype`` is the current Transformers spelling.  Using the old
+            # ``torch_dtype`` alias only adds a deprecation warning on Colab.
+            kwargs.update(device_map="auto", max_memory=max_memory, dtype=torch.float16)
         else:
-            kwargs.update(torch_dtype=torch.float16)
+            kwargs.update(dtype=torch.float16)
         return kwargs
 
     def load_model(
@@ -136,6 +154,7 @@ class VQAModelLoader:
         model = Qwen2VLForConditionalGeneration.from_pretrained(
             model_name, **self._model_kwargs(quantized, max_memory)
         )
+        self._prepare_generation_config(model)
         if self.device == "cpu":
             model.to("cpu")
         self.models[model_name] = model
@@ -179,6 +198,7 @@ class VQAModelLoader:
         print(f"Attaching LoRA adapter: {adapter}")
         model = PeftModel.from_pretrained(base, adapter, **self._hub_kwargs())
         model.eval()
+        self._prepare_generation_config(model)
         self.models[config.model_id] = model
         self.tokenizers[config.model_id] = processor
         return model, processor
