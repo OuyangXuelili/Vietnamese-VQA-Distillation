@@ -1,4 +1,4 @@
-"""Training utilities for Vietnamese VQA Distillation."""
+"""Training module for Vi-VQA"""
 
 from .config_utils import ConfigLoader
 from .trainer_utils import (

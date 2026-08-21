@@ -30,7 +30,7 @@
 - **Teacher 7B**: mô hình lớn, ưu tiên chất lượng câu trả lời.
 - **Student 2B**: mô hình gọn hơn, được chưng cất tri thức từ Teacher để giảm tài nguyên khi triển khai.
 - **Gradio App**: giao diện web hỗ trợ chọn model, kiểu trả lời và độ dài đầu ra.
-- **Pipeline đầy đủ**: tải dữ liệu, fine-tune Teacher, distill Student, đánh giá và inference.
+- **Quy trình nghiên cứu**: tải dữ liệu, fine-tune Teacher, distill Student, đánh giá và inference.
 
 > Các repository model chứa **LoRA adapter sau fine-tune**. Khi chạy, ứng dụng ghép adapter với Qwen2-VL base model tương ứng. Bạn không cần train lại để dùng demo.
 
@@ -43,7 +43,7 @@
 | Chạy không cần train lại | Tự lấy adapter công khai từ Hugging Face khi không có output local |
 | Offline-ready | Có lệnh tải trước base model và adapter vào máy |
 | Cấu hình hóa | Dataset, model, training và distillation được quản lý bằng YAML |
-| Giao diện hiện đại | Upload ảnh, câu hỏi gợi ý, tùy chỉnh độ chi tiết và theo dõi thời gian |
+| Giao diện demo | Upload ảnh, câu hỏi gợi ý, tùy chỉnh độ chi tiết và theo dõi thời gian |
 
 ## Kiến trúc
 
@@ -218,7 +218,7 @@ Vietnamese-VQA-Distillation/
 │   ├── models/                  # Model loader, wrapper và inference
 │   └── training/                # Training loop và tiện ích
 ├── requirements-app.txt         # Dependencies tối thiểu cho demo
-└── requirements.txt             # Dependencies đầy đủ cho nghiên cứu
+└── requirements.txt             # Môi trường huấn luyện và đánh giá
 ```
 
 Các thư mục `models/`, `outputs-7B/`, `outputs-2B-distilled/` và cache dữ liệu được bỏ qua bởi Git vì có dung lượng lớn. Trọng số được quản lý trên Hugging Face.

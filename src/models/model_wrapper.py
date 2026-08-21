@@ -121,9 +121,7 @@ class VisionLanguageModelWrapper(VQAModelWrapper):
             images=images,
             text=texts,
             return_tensors="pt",
-            # The demo sends one image at a time.  Avoid padding that single
-            # prompt; keep padding for the batch path used by evaluation.
-            padding=len(texts) > 1,
+            padding=True,
         ).to(self.device)
         
         # Generate

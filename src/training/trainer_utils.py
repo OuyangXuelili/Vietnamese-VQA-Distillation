@@ -132,9 +132,11 @@ class MetricsCalculator:
             
             return np.mean(scores) if scores else 0.0
         
-        except ImportError:
-            print("Warning: rouge_score not installed, using BERTScore instead")
-            return MetricsCalculator.bertscore_f1(predictions, references)
+        except ImportError as exc:
+            raise RuntimeError(
+                "ROUGE-L requires the 'rouge-score' package. "
+                "Install requirements.txt before evaluation."
+            ) from exc
     
     @staticmethod
     def bertscore_f1(predictions: List[str], references: List[str]) -> float:
@@ -161,9 +163,11 @@ class MetricsCalculator:
             
             return F1.mean().item()
         
-        except ImportError:
-            print("Warning: bert_score not installed")
-            return 0.0
+        except ImportError as exc:
+            raise RuntimeError(
+                "BERTScore requires the 'bert-score' package. "
+                "Install requirements.txt before evaluation."
+            ) from exc
     
     @staticmethod
     def calculate_all_metrics(
@@ -219,7 +223,7 @@ class TrainingHelper:
         return {
             "allocated_gb": torch.cuda.memory_allocated() / 1e9,
             "reserved_gb": torch.cuda.memory_reserved() / 1e9,
-            "cached_gb": torch.cuda.memory_cached() / 1e9,
+            "cached_gb": torch.cuda.memory_reserved() / 1e9,
         }
     
     @staticmethod

@@ -13,6 +13,8 @@ __pycache__/
 /models/
 /outputs-7B/
 /outputs-2B-distilled/
+/outputs-2B-supervised/
+/outputs-2B-supervised-quick/
 /data/cache/
 
 # Runtime artifacts
@@ -20,6 +22,8 @@ __pycache__/
 *.zip
 /results/
 /checkpoints/
+/.gradio/
+/tmp/
 
 # Microsoft Word temporary lock files
 reports/~$*.docx
