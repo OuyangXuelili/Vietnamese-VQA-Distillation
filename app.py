@@ -28,8 +28,23 @@ ROOT = Path(__file__).resolve().parent
 APP_TITLE = "Vietnamese Generative VQA Distillation"
 OWNER = "OuyangXuelili"
 
-STUDENT_LABEL = "ViVQA 2B"
-TEACHER_LABEL = "ViVQA 7B"
+STUDENT_LABEL = "2B · Student"
+TEACHER_LABEL = "7B · Teacher"
+
+EMPTY_CHAT_EXAMPLES = [
+    {
+        "text": "Mô tả nội dung chính của ảnh",
+        "display_text": "Mô tả nội dung",
+    },
+    {
+        "text": "Trong ảnh có những đối tượng nào?",
+        "display_text": "Nhận biết đối tượng",
+    },
+    {
+        "text": "Đọc phần chữ xuất hiện trong ảnh",
+        "display_text": "Đọc chữ trong ảnh",
+    },
+]
 
 ADAPTERS = {
     STUDENT_LABEL: {
@@ -135,15 +150,25 @@ def time_badge(message: str, state: str = "success") -> str:
 
 
 def running_badge(message: str, started_at: float | None = None) -> str:
-    """Render a live request status; the browser updates its elapsed counter."""
+    """Render the live stage and elapsed time next to the composer."""
     safe_message = html.escape(message)
     started_ms = int((started_at or time.time()) * 1000)
     return (
-        '<span class="time-chip running">'
+        '<span class="time-chip running" role="status" aria-live="polite">'
         '<span class="status-pulse" aria-hidden="true"></span>'
         f'<span>{safe_message}</span>'
         f'<span class="live-elapsed" data-start="{started_ms}">0.0 giây</span>'
         '</span>'
+    )
+
+
+def pending_message_html(message: str) -> str:
+    """Render a quiet typing indicator while detailed status stays by the composer."""
+    safe_message = html.escape(message)
+    return (
+        f'<div class="assistant-typing" role="status" aria-label="{safe_message}">'
+        '<span></span><span></span><span></span>'
+        '</div>'
     )
 
 
@@ -157,7 +182,7 @@ def friendly_inference_error(exc: Exception) -> str:
         )
     if "out of memory" in detail or "cuda" in detail and "memory" in detail:
         return (
-            "GPU không đủ bộ nhớ. Hãy chọn ViVQA 2B hoặc khởi động lại phiên Colab."
+            "GPU không đủ bộ nhớ. Hãy chọn 2B · Student hoặc khởi động lại phiên Colab."
         )
     if "no such file" in detail or "not found" in detail:
         return "Không tìm thấy tệp mô hình cần thiết. Hãy kiểm tra lại thư mục trên Drive."
@@ -405,38 +430,65 @@ html, body {
   font-family: Inter, "Segoe UI", system-ui, sans-serif !important;
 }
 
-.gpt-shell {
-  width: 100% !important;
-  height: 100vh !important;
-  min-height: 0 !important;
-  margin: 0 !important;
-  gap: 0 !important;
-  flex-wrap: nowrap !important;
-  overflow: hidden !important;
-  background: var(--gpt-surface) !important;
-}
-
 .gpt-sidebar {
-  flex: 0 0 260px !important;
-  width: 260px !important;
-  min-width: 260px !important;
-  height: 100vh !important;
-  min-height: 0 !important;
   margin: 0 !important;
   padding: 12px 10px !important;
   gap: 10px !important;
-  overflow: hidden !important;
   border-right: 1px solid #eeeeef !important;
   background: var(--gpt-sidebar) !important;
   box-shadow: none !important;
+  transition: left .2s ease !important;
+}
+
+.gpt-sidebar .sidebar-content {
+  padding: 4px 20px 12px 10px !important;
+  scrollbar-width: thin;
+  scrollbar-color: #c8c8ce transparent;
+}
+
+.gpt-sidebar .sidebar-content > .column {
+  gap: 8px !important;
+}
+
+.gpt-sidebar .sidebar-content > .column > .block:first-child .html-container {
+  padding: 0 !important;
+}
+
+.gpt-sidebar .sidebar-content::-webkit-scrollbar,
+.conversation-selector::-webkit-scrollbar {
+  width: 6px;
+}
+
+.gpt-sidebar .sidebar-content::-webkit-scrollbar-track,
+.conversation-selector::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gpt-sidebar .sidebar-content::-webkit-scrollbar-thumb,
+.conversation-selector::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #c8c8ce;
+}
+
+.gpt-sidebar .sidebar-content::-webkit-scrollbar-thumb:hover,
+.conversation-selector::-webkit-scrollbar-thumb:hover {
+  background: #aaaab2;
+}
+
+html:not(.vivqa-sidebar-open) .gpt-sidebar .toggle-button {
+  transform: translateX(12px) !important;
+}
+
+html:not(.vivqa-sidebar-open) body .gradio-container .gpt-main .gpt-topbar {
+  padding-left: 40px !important;
 }
 
 .sidebar-brand {
   display: flex;
-  height: 42px;
+  height: 36px;
   align-items: center;
-  gap: 10px;
-  padding: 0 9px;
+  justify-content: space-between;
+  padding: 0 8px;
   color: var(--gpt-ink);
   font-size: 14px;
   font-weight: 650;
@@ -445,14 +497,30 @@ html, body {
 
 .sidebar-mark {
   display: grid;
-  width: 29px;
-  height: 29px;
+  width: 28px;
+  height: 28px;
   place-items: center;
   border-radius: 8px;
-  color: #fff;
-  background: #111827;
+  color: var(--gpt-ink) !important;
+  background: transparent;
   font-size: 10px;
   font-weight: 750;
+}
+
+.sidebar-mark svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  color: var(--gpt-ink) !important;
+  stroke: var(--gpt-ink) !important;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.sidebar-mark circle {
+  fill: var(--gpt-ink) !important;
+  stroke: none;
 }
 
 .sidebar-new-chat {
@@ -461,10 +529,10 @@ html, body {
   margin: 0 !important;
   padding: 0 12px !important;
   justify-content: flex-start !important;
-  border: 1px solid var(--gpt-line) !important;
+  border: 0 !important;
   border-radius: 10px !important;
   color: var(--gpt-ink) !important;
-  background: var(--gpt-surface) !important;
+  background: transparent !important;
   box-shadow: none !important;
   font-size: 13.5px !important;
   font-weight: 550 !important;
@@ -477,9 +545,9 @@ html, body {
 
 .sidebar-options {
   margin: 0 !important;
-  border: 1px solid var(--gpt-line) !important;
+  border: 0 !important;
   border-radius: 10px !important;
-  background: var(--gpt-surface) !important;
+  background: transparent !important;
   box-shadow: none !important;
 }
 
@@ -489,6 +557,10 @@ html, body {
   color: var(--gpt-ink) !important;
   font-size: 12.5px !important;
   font-weight: 550 !important;
+}
+
+.sidebar-options > .label-wrap:hover {
+  background: var(--gpt-hover) !important;
 }
 
 .sidebar-options > .wrap {
@@ -501,10 +573,15 @@ html, body {
   box-shadow: none !important;
 }
 
-.sidebar-options label,
-.sidebar-options .label-wrap span {
+.sidebar-options label {
   color: var(--gpt-muted) !important;
   font-size: 11.5px !important;
+}
+
+.sidebar-options > .label-wrap span {
+  color: var(--gpt-ink) !important;
+  font-size: 12.5px !important;
+  font-weight: 550 !important;
 }
 
 .sidebar-history-wrap {
@@ -521,6 +598,7 @@ html, body {
   border: 0 !important;
   background: transparent !important;
   scrollbar-width: thin;
+  scrollbar-color: #c8c8ce transparent;
 }
 
 .conversation-selector > div,
@@ -529,15 +607,21 @@ html, body {
 }
 
 .conversation-selector label {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
   min-height: 38px !important;
   margin: 0 !important;
   padding: 9px 10px !important;
+  overflow: hidden !important;
   border: 0 !important;
   border-radius: 9px !important;
   color: #3f3f46 !important;
   background: transparent !important;
   font-size: 13px !important;
   line-height: 1.35 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
   cursor: pointer !important;
 }
 
@@ -552,61 +636,134 @@ html, body {
 }
 
 .conversation-selector input[type="radio"] {
-  display: none !important;
-}
-
-.sidebar-delete-chat {
-  width: 100% !important;
-  min-height: 36px !important;
-  margin: 0 !important;
-  border: 0 !important;
-  color: #777781 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  font-size: 12px !important;
-}
-
-.sidebar-delete-chat:hover {
-  color: #b42318 !important;
-  background: #f1f1f2 !important;
-}
-
-.history-panel {
-  height: 100%;
-  overflow-y: auto;
-  padding: 10px 2px 18px;
-  scrollbar-width: thin;
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: -1px !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
 }
 
 .history-heading {
-  padding: 7px 9px;
+  padding: 7px 9px 5px;
   color: #8a8a95;
   font-size: 11px;
   font-weight: 650;
-}
-
-.history-item {
-  overflow: hidden;
-  margin: 1px 0;
-  padding: 9px;
-  border-radius: 8px;
-  color: #3f3f46;
-  font-size: 13px;
-  line-height: 1.35;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.history-item:first-of-type {
-  color: var(--gpt-ink);
-  background: #ececf1;
+.sidebar-history-heading {
+  min-height: 34px !important;
+  margin: 8px 0 0 !important;
+  align-items: center !important;
 }
 
-.history-empty {
-  padding: 10px 9px;
-  color: #92929d;
-  font-size: 12.5px;
-  line-height: 1.5;
+.sidebar-history-heading:not(:has(+ .conversation-selector label)) {
+  display: none !important;
+}
+
+.sidebar-history-heading > .html-container {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+.sidebar-rename-menu {
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  margin: 0 4px 0 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: #777781 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 18px !important;
+}
+
+.sidebar-rename-menu:hover {
+  color: var(--gpt-ink) !important;
+  background: #ececef !important;
+}
+
+.sidebar-rename-panel {
+  margin: 4px 2px !important;
+  padding: 9px !important;
+  border: 1px solid var(--gpt-line) !important;
+  border-radius: 11px !important;
+  background: #fff !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .06) !important;
+}
+
+.sidebar-rename-panel:not(:has(input)) {
+  display: none !important;
+}
+
+.sidebar-rename-panel .block {
+  overflow: visible !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.sidebar-rename-panel input,
+.sidebar-rename-panel textarea {
+  min-height: 36px !important;
+  padding: 8px 9px !important;
+  border: 1px solid #d4d4d8 !important;
+  border-radius: 8px !important;
+  color: var(--gpt-ink) !important;
+  background: #fff !important;
+  font-size: 12.5px !important;
+}
+
+.sidebar-rename-panel .input-container {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.sidebar-rename-panel input:focus,
+.sidebar-rename-panel input:focus-visible,
+.sidebar-rename-panel textarea:focus,
+.sidebar-rename-panel textarea:focus-visible {
+  border-color: #9a9aa3 !important;
+  outline: none !important;
+  box-shadow: 0 0 0 2px rgba(113, 113, 122, .16) !important;
+}
+
+.sidebar-rename-actions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  margin-top: 7px !important;
+  gap: 6px !important;
+}
+
+.sidebar-rename-actions > * {
+  flex: 1 1 0 !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.sidebar-rename-actions button {
+  width: 100% !important;
+  min-height: 32px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+}
+
+.sidebar-new-chat:focus-visible,
+.sidebar-options > .label-wrap:focus-visible,
+.sidebar-rename-menu:focus-visible,
+.gpt-sidebar .toggle-button:focus-visible,
+.conversation-selector label:has(input:focus-visible),
+.topbar-model:focus-within {
+  outline: 2px solid #73737f !important;
+  outline-offset: 2px !important;
 }
 
 .gpt-main {
@@ -620,6 +777,12 @@ html, body {
   flex-wrap: nowrap !important;
   overflow: clip !important;
   background: var(--gpt-surface) !important;
+  transition: margin-left .2s ease, width .2s ease !important;
+}
+
+.vivqa-sidebar-open .gpt-main {
+  width: calc(100% - 260px) !important;
+  margin-left: 260px !important;
 }
 
 .gpt-topbar {
@@ -628,26 +791,30 @@ html, body {
   min-height: 58px !important;
   margin: 0 !important;
   padding: 8px 18px !important;
+  gap: 8px !important;
   align-items: center !important;
   flex-wrap: nowrap !important;
   background: rgba(255,255,255,.96) !important;
 }
 
+.topbar-identity-wrap {
+  flex: 0 0 auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.topbar-identity {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
 .topbar-title {
-  min-width: 140px;
+  min-width: 0;
   color: var(--gpt-ink);
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -.01em;
-}
-
-.topbar-title-wrap {
-  flex: 0 0 140px !important;
-  min-width: 140px !important;
-}
-
-.topbar-spacer {
-  flex: 1 1 auto !important;
+  font-size: 16px;
+  font-weight: 680;
+  letter-spacing: -.02em;
 }
 
 .topbar-spacer-wrap {
@@ -658,34 +825,25 @@ html, body {
 .topbar-model-picker {
   flex: 0 0 auto !important;
   width: auto !important;
-  min-width: 218px !important;
-  min-height: 42px !important;
+  min-width: 164px !important;
+  min-height: 38px !important;
   margin: 0 !important;
-  padding: 3px 6px 3px 11px !important;
-  gap: 3px !important;
+  padding: 0 4px !important;
+  gap: 0 !important;
   align-items: center !important;
-  border: 1px solid #e8e8ec !important;
-  border-radius: 12px !important;
-  background: #fff !important;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .03) !important;
-}
-
-.model-picker-label {
-  flex: 0 0 auto;
-  color: #858591;
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: .01em;
-  white-space: nowrap;
+  border: 0 !important;
+  border-radius: 10px !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .topbar-model {
-  flex: 0 0 150px !important;
-  width: 150px !important;
-  min-width: 150px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
+  flex: 0 0 156px !important;
+  width: 156px !important;
+  min-width: 156px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  max-height: 38px !important;
   margin: 0 !important;
   border: 0 !important;
   background: transparent !important;
@@ -694,11 +852,12 @@ html, body {
 
 .topbar-model input,
 .topbar-model button {
-  min-height: 38px !important;
+  min-height: 36px !important;
   border: 0 !important;
   border-radius: 9px !important;
   background: transparent !important;
-  font-size: 13px !important;
+  font-size: 13.5px !important;
+  font-weight: 550 !important;
 }
 
 .topbar-model:hover input,
@@ -708,7 +867,7 @@ html, body {
 
 .topbar-model-status {
   flex: 0 0 auto !important;
-  margin-left: 7px !important;
+  margin-left: 1px !important;
 }
 
 .mobile-new-chat {
@@ -731,8 +890,17 @@ html, body {
   background: #a1a1aa;
 }
 
+.model-readiness.waiting {
+  display: none;
+}
+
 .model-readiness.ready span {
   background: #16a34a;
+}
+
+.model-readiness.loading span {
+  background: #111827;
+  animation: vivqa-pulse 1.1s ease-in-out infinite;
 }
 
 .gpt-stage {
@@ -784,6 +952,41 @@ html, body {
   background: transparent !important;
 }
 
+.assistant-typing {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  gap: 4px;
+}
+
+.assistant-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #565660;
+  animation: vivqa-typing 1.15s ease-in-out infinite;
+}
+
+.assistant-typing span:nth-child(2) {
+  animation-delay: .14s;
+}
+
+.assistant-typing span:nth-child(3) {
+  animation-delay: .28s;
+}
+
+#chat-thread [class*="example"] {
+  border-color: #e5e5e8 !important;
+  border-radius: 12px !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+#chat-thread [class*="example"]:hover {
+  border-color: #d7d7dc !important;
+  background: #f7f7f8 !important;
+}
+
 #chat-thread .message.user img {
   display: block !important;
   max-width: 260px !important;
@@ -802,7 +1005,45 @@ html, body {
 }
 
 #chat-thread .message-buttons {
+  display: flex !important;
+  margin-top: 3px !important;
+  opacity: 0;
+  transition: opacity .14s ease;
+}
+
+#chat-thread .message:hover .message-buttons,
+#chat-thread .message:focus-within .message-buttons {
+  opacity: 1;
+}
+
+#chat-thread .message.user .message-buttons {
   display: none !important;
+}
+
+#chat-thread .message-buttons button {
+  width: 30px !important;
+  min-width: 30px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  padding: 6px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  color: #74747e !important;
+  background: transparent !important;
+}
+
+#chat-thread .message-buttons button:hover {
+  color: var(--gpt-ink) !important;
+  background: #f1f1f3 !important;
+}
+
+#chat-thread .placeholder,
+#chat-thread .empty,
+#chat-thread [class*="placeholder"] {
+  color: #777782 !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  letter-spacing: -.01em !important;
 }
 
 .composer-area {
@@ -816,13 +1057,16 @@ html, body {
   width: 100% !important;
   min-height: 0 !important;
   margin: 0 !important;
-  padding: 0 12px !important;
+  padding: 0 8px !important;
   align-items: center !important;
+  flex-wrap: nowrap !important;
   gap: 8px !important;
 }
 
 .active-image-preview {
-  flex: 1 1 auto !important;
+  flex: 0 0 auto !important;
+  width: fit-content !important;
+  max-width: calc(100% - 38px) !important;
   min-width: 0 !important;
   margin: 0 !important;
   padding: 0 !important;
@@ -830,17 +1074,27 @@ html, body {
   background: transparent !important;
 }
 
+.active-image-preview .html-container {
+  width: fit-content !important;
+  padding: 0 !important;
+}
+
 .pinned-image {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+  max-width: 100%;
+  padding: 5px 9px 5px 5px;
+  border: 1px solid #e4e4e7;
+  border-radius: 12px;
   color: #575761;
+  background: #f7f7f8;
 }
 
 .pinned-image img {
-  width: 52px;
-  height: 52px;
-  flex: 0 0 52px;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
   border: 1px solid #e3e3e7;
   border-radius: 10px;
   object-fit: cover;
@@ -864,18 +1118,26 @@ html, body {
 }
 
 .clear-active-image {
-  flex: 0 0 auto !important;
-  width: auto !important;
-  min-width: 62px !important;
+  flex: 0 0 30px !important;
+  width: 30px !important;
+  min-width: 30px !important;
+  max-width: 30px !important;
+  height: 30px !important;
   min-height: 30px !important;
   margin-left: 0 !important;
-  padding: 0 10px !important;
+  padding: 0 !important;
   border: 0 !important;
-  border-radius: 8px !important;
+  border-radius: 50% !important;
   color: #666670 !important;
   background: #f1f1f3 !important;
   box-shadow: none !important;
-  font-size: 11px !important;
+  font-size: 17px !important;
+  line-height: 1 !important;
+}
+
+.clear-active-image:hover {
+  color: var(--gpt-ink) !important;
+  background: #e7e7ea !important;
 }
 
 #chat-composer.chat-composer-gpt {
@@ -932,7 +1194,7 @@ html, body {
 }
 
 #chat-composer textarea::placeholder {
-  color: #92929d !important;
+  color: #7c7c87 !important;
 }
 
 #chat-composer [data-testid="upload-button"],
@@ -966,6 +1228,19 @@ html, body {
 
 #chat-composer [data-testid="submit-button"]:hover {
   background: #000 !important;
+}
+
+#chat-composer [data-testid="submit-button"]:focus-visible,
+#chat-composer [data-testid="upload-button"]:focus-visible {
+  outline: 2px solid #73737f !important;
+  outline-offset: 2px !important;
+}
+
+#chat-composer [data-testid="submit-button"]:disabled,
+.topbar-model input:disabled,
+.topbar-model button:disabled {
+  cursor: not-allowed !important;
+  opacity: .48 !important;
 }
 
 #chat-composer .stop-button {
@@ -1037,42 +1312,6 @@ html, body {
   opacity: 1 !important;
 }
 
-.composer-style {
-  flex: 0 0 112px !important;
-  width: 112px !important;
-  min-width: 112px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-  margin: 0 !important;
-  border: 0 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-
-.composer-style > div {
-  width: 112px !important;
-  height: 40px !important;
-  min-height: 40px !important;
-  max-height: 40px !important;
-}
-
-.composer-style input,
-.composer-style button {
-  min-height: 40px !important;
-  border: 0 !important;
-  border-radius: 20px !important;
-  color: #6b6b75 !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  font-size: 12.5px !important;
-}
-
-.composer-style:hover input,
-.composer-style:hover button {
-  background: #f4f4f5 !important;
-}
-
 .composer-status {
   min-height: 20px !important;
   margin: 0 10px !important;
@@ -1121,6 +1360,11 @@ html, body {
   50% { opacity: 1; transform: scale(1); }
 }
 
+@keyframes vivqa-typing {
+  0%, 60%, 100% { opacity: .3; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-2px); }
+}
+
 /* Hide duplicate queue overlays on output components. The composer keeps its
    own queue indicator so a queued request never looks frozen. */
 .sidebar-history-wrap > .wrap.center.full.translucent,
@@ -1140,23 +1384,25 @@ footer {
 }
 
 @media (max-width: 760px) {
-  .gpt-sidebar {
-    display: none !important;
+  .vivqa-sidebar-open .gpt-main {
+    width: 100% !important;
+    margin-left: 0 !important;
   }
   .gpt-topbar {
     padding: 7px 12px !important;
     gap: 7px !important;
   }
-  .topbar-title-wrap {
-    flex: 0 0 54px !important;
-    min-width: 54px !important;
+  .topbar-identity-wrap {
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
   }
   .topbar-title {
-    min-width: 54px !important;
+    min-width: 0 !important;
     font-size: 13px !important;
   }
   .topbar-spacer-wrap {
-    display: none !important;
+    flex: 1 1 auto !important;
+    display: block !important;
   }
   .mobile-new-chat {
     display: inline-flex !important;
@@ -1173,14 +1419,11 @@ footer {
     font-size: 20px !important;
   }
   .topbar-model-picker {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    padding-left: 7px !important;
+    flex: 0 1 150px !important;
+    min-width: 120px !important;
+    padding: 0 !important;
   }
   .topbar-model-status {
-    display: none !important;
-  }
-  .model-picker-label {
     display: none !important;
   }
   .topbar-model {
@@ -1194,8 +1437,8 @@ footer {
   #chat-composer.chat-composer-gpt {
     border-radius: 22px !important;
   }
-  .composer-style {
-    display: none !important;
+  #chat-thread .message-buttons {
+    opacity: 1;
   }
   #chat-thread .message {
     max-width: 92% !important;
@@ -1220,7 +1463,10 @@ PASTE_IMAGE_JS = """
     'vivqa_active_conversation_v2',
     'vivqa_conversations_v3',
     'vivqa_active_conversation_v3',
+    'vivqa_sidebar_collapsed',
   ].forEach((key) => window.localStorage.removeItem(key));
+
+  document.documentElement.classList.add('vivqa-sidebar-open');
 
   const pasteImage = (event) => {
     const items = Array.from(event.clipboardData?.items || []);
@@ -1267,9 +1513,65 @@ PASTE_IMAGE_JS = """
     const running = timers.length > 0;
     document.querySelectorAll('#chat-composer .stop-button').forEach((button) => {
       button.classList.toggle('vivqa-running', running);
+      button.setAttribute('title', 'Dừng tạo câu trả lời');
+      button.setAttribute('aria-label', 'Dừng tạo câu trả lời');
     });
     document.querySelectorAll('#chat-composer [data-testid="submit-button"]').forEach((button) => {
+      const composerRoot = document.querySelector('#chat-composer');
+      const textarea = composerRoot?.querySelector('textarea');
+      const fileInput = composerRoot?.querySelector('input[type="file"]');
+      const hasQuestion = Boolean(textarea?.value?.trim());
+      const hasNewImage = Boolean(
+        fileInput?.files?.length ||
+        composerRoot?.querySelector('.thumbnail-wrapper, .thumbnail-item')
+      );
+      const hasPinnedImage = Boolean(
+        document.querySelector('.active-image-strip .pinned-image')
+      );
+      const canSend = hasQuestion && (hasNewImage || hasPinnedImage);
       button.style.display = running ? 'none' : '';
+      button.disabled = running || !canSend;
+      button.setAttribute('aria-disabled', String(running || !canSend));
+      button.setAttribute('aria-label', 'Gửi câu hỏi');
+      button.setAttribute(
+        'title',
+        canSend ? 'Gửi câu hỏi' : 'Thêm ảnh và nhập câu hỏi để gửi'
+      );
+    });
+    document.querySelectorAll('.topbar-model input, .topbar-model button').forEach((control) => {
+      control.disabled = running;
+      control.setAttribute('aria-disabled', String(running));
+      control.setAttribute('title', 'Chọn mô hình trả lời');
+    });
+    document.querySelectorAll('#chat-composer [data-testid="upload-button"]').forEach((button) => {
+      button.setAttribute('title', 'Tải lên hoặc dán ảnh');
+      button.setAttribute('aria-label', 'Tải lên hoặc dán ảnh');
+    });
+    document.querySelectorAll('.sidebar-rename-menu button, .sidebar-rename-menu').forEach((button) => {
+      button.setAttribute('title', 'Đổi tên cuộc trò chuyện');
+      button.setAttribute('aria-label', 'Đổi tên cuộc trò chuyện');
+    });
+    document.querySelectorAll('.clear-active-image button, .clear-active-image').forEach((button) => {
+      button.setAttribute('title', 'Bỏ ảnh đang dùng');
+      button.setAttribute('aria-label', 'Bỏ ảnh đang dùng');
+    });
+    document.querySelectorAll('.gpt-sidebar .toggle-button').forEach((button) => {
+      const isOpen = document.documentElement.classList.contains('vivqa-sidebar-open');
+      const label = isOpen ? 'Thu gọn thanh bên' : 'Mở thanh bên';
+      button.setAttribute('title', label);
+      button.setAttribute('aria-label', label);
+    });
+    document.querySelectorAll('#chat-thread button[aria-label="Copy message"]').forEach((button) => {
+      button.setAttribute('title', 'Sao chép câu trả lời');
+      button.setAttribute('aria-label', 'Sao chép câu trả lời');
+    });
+    document.querySelectorAll('#chat-thread button[aria-label="Retry"]').forEach((button) => {
+      button.setAttribute('title', 'Thử lại');
+      button.setAttribute('aria-label', 'Thử lại');
+    });
+    document.querySelectorAll('#chat-thread button[aria-label="Clear"]').forEach((button) => {
+      button.setAttribute('title', 'Xóa nội dung');
+      button.setAttribute('aria-label', 'Xóa nội dung');
     });
   }, 250);
 })();
@@ -1416,6 +1718,8 @@ def conversation_choices(conversations: list[dict]) -> list[tuple[str, str]]:
     """Return label/value pairs for the sidebar conversation picker."""
     choices: list[tuple[str, str]] = []
     for item in conversations:
+        if not item.get("messages") and not item.get("records"):
+            continue
         title = " ".join(str(item.get("title") or "Cuộc trò chuyện mới").split())
         short = title if len(title) <= 34 else f"{title[:33]}…"
         choices.append((short, str(item["id"])))
@@ -1423,7 +1727,12 @@ def conversation_choices(conversations: list[dict]) -> list[tuple[str, str]]:
 
 
 def conversation_picker_update(conversations: list[dict], active_id: str):
-    return gr.update(choices=conversation_choices(conversations), value=active_id)
+    choices = conversation_choices(conversations)
+    visible_ids = {value for _label, value in choices}
+    return gr.update(
+        choices=choices,
+        value=active_id if active_id in visible_ids else None,
+    )
 
 
 def find_conversation(conversations: list[dict], conversation_id: str | None) -> dict:
@@ -1445,14 +1754,109 @@ def title_from_question(question: str) -> str:
     return title if len(title) <= 48 else f"{title[:47]}…"
 
 
-def model_readiness_html(model_choice: str) -> str:
-    if model_choice == _active_model_choice and model_choice in _inference_engines:
-        text, state = "Đã sẵn sàng", "ready"
+def model_readiness_html(model_choice: str, loading: bool = False) -> str:
+    if loading:
+        text, state = "Đang nạp", "loading"
+    elif model_choice == _active_model_choice and model_choice in _inference_engines:
+        text, state = "Đang dùng", "ready"
     else:
-        text, state = "Sẵn sàng", "waiting"
+        text, state = "Chưa nạp", "waiting"
     return (
-        f'<div class="model-readiness {state}"><span></span>'
+        f'<div class="model-readiness {state}" aria-label="Trạng thái mô hình"><span></span>'
         f'{html.escape(text)}</div>'
+    )
+
+
+def populate_example(event: gr.SelectData):
+    """Place one empty-state suggestion into the composer without submitting it."""
+    value = event.value if isinstance(event.value, dict) else {}
+    return {"text": str(value.get("text") or ""), "files": []}
+
+
+def clear_composer_notice(value, current_notice: str):
+    """Clear a validation message once its missing input has been supplied."""
+    question, image_path = composer_value(value)
+    notice = str(current_notice or "")
+    resolved_missing_image = bool(image_path) and "Đính kèm ảnh trước" in notice
+    resolved_missing_question = bool(question) and "Nhập câu hỏi trước" in notice
+    if resolved_missing_image or resolved_missing_question:
+        return time_badge("Sẵn sàng", "idle")
+    return gr.skip()
+
+
+def open_rename_panel(conversations: list[dict] | None, active_id: str | None):
+    """Open the compact rename form for a started conversation."""
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        return gr.update(visible=False), ""
+    active = find_conversation(sessions, active_id)
+    if not active.get("messages") and not active.get("records"):
+        return gr.update(visible=False), ""
+    return gr.update(visible=True), str(active.get("title") or "")
+
+
+def close_rename_panel():
+    return gr.update(visible=False), ""
+
+
+def rename_active_conversation(
+    title: str,
+    conversations: list[dict] | None,
+    active_id: str | None,
+):
+    """Rename the selected conversation and refresh its sidebar entry."""
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    active = dict(find_conversation(sessions, active_id))
+    clean_title = " ".join(str(title or "").split()).strip()
+    if clean_title:
+        active["title"] = clean_title if len(clean_title) <= 48 else f"{clean_title[:47]}…"
+        sessions = save_conversation(sessions, active)
+    active_id = str(active["id"])
+    return (
+        sessions,
+        conversation_picker_update(sessions, active_id),
+        gr.update(visible=False),
+        "",
+    )
+
+
+def _message_image_path(content) -> str | None:
+    if not isinstance(content, (list, tuple)):
+        return None
+    for item in content:
+        if isinstance(item, dict) and item.get("path"):
+            return str(item["path"])
+    return None
+
+
+def cancel_chat_request(
+    conversation: list[dict] | None,
+    conversations: list[dict] | None,
+    active_id: str | None,
+    model_choice: str,
+):
+    """Replace an in-progress row with a stable cancelled state."""
+    messages = list(conversation or [])
+    if messages and messages[-1].get("role") == "assistant":
+        content = str(messages[-1].get("content") or "")
+        if "assistant-typing" in content or "Đang xử lý" in content:
+            messages[-1] = {"role": "assistant", "content": "_Đã dừng yêu cầu._"}
+
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    active = dict(find_conversation(sessions, active_id))
+    active["messages"] = messages
+    sessions = save_conversation(sessions, active)
+    active_id = str(active["id"])
+    return (
+        messages,
+        time_badge("", "idle"),
+        sessions,
+        conversation_picker_update(sessions, active_id),
+        model_readiness_html(model_choice),
     )
 
 
@@ -1615,7 +2019,20 @@ def answer_chat_gpt(
             "content": chat_user_content(attached_image_path, clean_question),
         }
     )
-    messages.append({"role": "assistant", "content": "_Đang xử lý ảnh…_"})
+    needs_model_load = not (
+        model_choice == _active_model_choice and model_choice in _inference_engines
+    )
+    loading_text = (
+        f"Đang nạp {model_choice}"
+        if needs_model_load
+        else "Đang phân tích ảnh"
+    )
+    messages.append(
+        {
+            "role": "assistant",
+            "content": pending_message_html(loading_text),
+        }
+    )
     active.update(
         {
             "messages": messages,
@@ -1628,11 +2045,7 @@ def answer_chat_gpt(
     )
     if active.get("title") == "Cuộc trò chuyện mới":
         active["title"] = title_from_question(clean_question)
-    loading_text = (
-        f"Đang phân tích ảnh bằng {model_choice}"
-        if model_choice == _active_model_choice
-        else f"Đang nạp {model_choice}"
-    )
+    sessions = save_conversation(sessions, active)
 
     # This first yield makes the sent message and live timer visible before
     # the potentially long model-loading call starts.
@@ -1649,16 +2062,26 @@ def answer_chat_gpt(
         sessions,
         active_id,
         conversation_picker_update(sessions, active_id),
-        model_readiness_html(model_choice),
+        model_readiness_html(model_choice, loading=needs_model_load),
     )
 
     try:
         image = open_composer_image(selected_image_path)
         engine, load_seconds = get_inference(model_choice)
+        messages = list(messages)
+        messages[-1] = {
+            "role": "assistant",
+            "content": pending_message_html(
+                "Đang phân tích ảnh và tạo câu trả lời",
+            ),
+        }
         yield (
             messages,
             {"text": "", "files": []},
-            running_badge("Đang sinh câu trả lời", request_started),
+            running_badge(
+                "Đang phân tích ảnh và tạo câu trả lời",
+                request_started,
+            ),
             selected_image_path,
             image_component_update(selected_image_path),
             image_clear_button_update(selected_image_path),
@@ -1742,6 +2165,67 @@ def answer_chat_gpt(
     )
 
 
+def retry_chat_gpt(
+    retry_data: gr.RetryData,
+    model_choice: str,
+    response_style: str,
+    max_new_tokens: int,
+    active_image_path: str | None,
+    history: list[dict] | None,
+    conversation: list[dict] | None,
+    conversations: list[dict] | None,
+    active_conversation_id: str | None,
+):
+    """Regenerate one answer while keeping the selected model and image."""
+    sessions = normalize_conversations(conversations)
+    if not sessions:
+        sessions = [new_conversation()]
+    active = dict(find_conversation(sessions, active_conversation_id))
+
+    # Gradio may optimistically remove the retried turn from the visible
+    # Chatbot before this callback runs. The browser-persisted conversation is
+    # therefore the reliable source for the original question and attachment.
+    saved_messages = list(active.get("messages") or [])
+    messages = saved_messages or list(conversation or [])
+    raw_index = retry_data.index[0] if isinstance(retry_data.index, tuple) else retry_data.index
+    user_index = min(max(int(raw_index), 0), max(len(messages) - 1, 0))
+    while user_index >= 0 and messages[user_index].get("role") != "user":
+        user_index -= 1
+
+    if user_index < 0:
+        return
+
+    user_content = messages[user_index].get("content")
+    question = _message_text(user_content)
+    retry_image_path = _message_image_path(user_content) or active_image_path
+    previous_messages = messages[:user_index]
+    completed_turns = sum(
+        1 for message in previous_messages if message.get("role") == "user"
+    )
+    previous_records = list(history or [])[:completed_turns]
+
+    active.update(
+        {
+            "messages": previous_messages,
+            "records": previous_records,
+            "active_image_path": retry_image_path,
+        }
+    )
+    sessions = save_conversation(sessions, active)
+
+    yield from answer_chat_gpt(
+        {"text": question, "files": []},
+        model_choice,
+        response_style,
+        max_new_tokens,
+        retry_image_path,
+        previous_records,
+        previous_messages,
+        sessions,
+        str(active["id"]),
+    )
+
+
 def create_demo() -> gr.Blocks:
     """Build the conversational Vietnamese visual question answering demo."""
     with gr.Blocks(
@@ -1764,13 +2248,25 @@ def create_demo() -> gr.Blocks:
         )
         active_image_path_state = gr.State(None)
 
-        with gr.Row(elem_classes="gpt-shell"):
-            with gr.Column(elem_classes="gpt-sidebar"):
+        # Keep Sidebar and the main column as direct Blocks children. Wrapping
+        # them in a Row prevents Gradio's native collapse control from working.
+        if True:
+            with gr.Sidebar(
+                open=True,
+                width=260,
+                elem_classes="gpt-sidebar",
+            ) as sidebar_panel:
                 gr.HTML(
                     """
                     <div class="sidebar-brand">
-                      <span class="sidebar-mark">VQ</span>
-                      <span>ViVQA</span>
+                      <span class="sidebar-mark" aria-label="ViVQA">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                          <path d="M5 6.5A2.5 2.5 0 0 1 7.5 4h9A2.5 2.5 0 0 1 19 6.5v6A2.5 2.5 0 0 1 16.5 15H12l-3.8 3v-3h-.7A2.5 2.5 0 0 1 5 12.5z"/>
+                          <circle cx="9" cy="9.5" r="1"/>
+                          <circle cx="12" cy="9.5" r="1"/>
+                          <circle cx="15" cy="9.5" r="1"/>
+                        </svg>
+                      </span>
                     </div>
                     """
                 )
@@ -1779,7 +2275,7 @@ def create_demo() -> gr.Blocks:
                     elem_classes="sidebar-new-chat",
                 )
                 with gr.Accordion(
-                    "Tùy chọn trả lời",
+                    "Điều chỉnh câu trả lời",
                     open=False,
                     elem_classes="sidebar-options",
                 ):
@@ -1788,33 +2284,49 @@ def create_demo() -> gr.Blocks:
                         value="Cân bằng",
                         label="Cách trả lời",
                     )
-                    max_new_tokens = gr.Slider(
-                        minimum=16,
-                        maximum=160,
+                    max_new_tokens = gr.Dropdown(
+                        choices=[48, 64, 96, 128, 160],
                         value=96,
-                        step=8,
                         label="Độ dài tối đa",
                     )
-                gr.HTML('<div class="history-heading">Cuộc trò chuyện</div>')
+                with gr.Row(elem_classes="sidebar-history-heading"):
+                    gr.HTML('<div class="history-heading">Cuộc trò chuyện</div>')
+                    rename_menu = gr.Button(
+                        "⋯",
+                        elem_classes="sidebar-rename-menu",
+                    )
                 conversation_selector = gr.Radio(
-                    choices=[("Cuộc trò chuyện mới", initial_conversation["id"])],
-                    value=initial_conversation["id"],
+                    choices=[],
+                    value=None,
                     show_label=False,
                     container=False,
                     elem_classes="conversation-selector",
                 )
-                delete_chat = gr.Button("Xóa cuộc trò chuyện", elem_classes="sidebar-delete-chat")
+                with gr.Group(
+                    visible=False,
+                    elem_classes="sidebar-rename-panel",
+                ) as rename_panel:
+                    rename_input = gr.Textbox(
+                        placeholder="Tên cuộc trò chuyện",
+                        show_label=False,
+                        container=False,
+                        max_lines=1,
+                    )
+                    with gr.Row(elem_classes="sidebar-rename-actions"):
+                        rename_cancel = gr.Button("Hủy")
+                        rename_save = gr.Button("Lưu", variant="primary")
 
             with gr.Column(elem_classes="gpt-main"):
                 with gr.Row(elem_classes="gpt-topbar"):
                     gr.HTML(
-                        '<div class="topbar-title">ViVQA</div>',
-                        elem_classes="topbar-title-wrap",
+                        """
+                        <div class="topbar-identity">
+                          <span class="topbar-title">ViVQA</span>
+                        </div>
+                        """,
+                        elem_classes="topbar-identity-wrap",
                     )
-                    gr.HTML("<div></div>", elem_classes="topbar-spacer-wrap")
-                    mobile_new_chat = gr.Button("＋", elem_classes="mobile-new-chat")
                     with gr.Row(elem_classes="topbar-model-picker"):
-                        gr.HTML('<span class="model-picker-label">Mô hình</span>')
                         model_choice = gr.Dropdown(
                             choices=list(ADAPTERS),
                             value=STUDENT_LABEL,
@@ -1828,16 +2340,23 @@ def create_demo() -> gr.Blocks:
                         model_readiness_html(STUDENT_LABEL),
                         elem_classes="topbar-model-status",
                     )
+                    gr.HTML("<div></div>", elem_classes="topbar-spacer-wrap")
+                    mobile_new_chat = gr.Button(
+                        "＋",
+                        elem_classes="mobile-new-chat",
+                    )
 
                 with gr.Column(elem_classes="gpt-stage"):
                     chatbot = gr.Chatbot(
                         value=product_initial_chat(),
                         height=460,
-                        buttons=[],
+                        buttons=["copy"],
                         render_markdown=True,
                         group_consecutive_messages=True,
                         allow_file_downloads=False,
                         show_label=False,
+                        placeholder="Thêm ảnh và chọn một gợi ý để bắt đầu",
+                        examples=EMPTY_CHAT_EXAMPLES,
                         elem_id="chat-thread",
                     )
 
@@ -1849,7 +2368,7 @@ def create_demo() -> gr.Blocks:
                                 elem_classes="active-image-preview",
                             )
                             clear_image = gr.Button(
-                                "Bỏ ảnh",
+                                "×",
                                 visible=False,
                                 elem_classes="clear-active-image",
                             )
@@ -1914,7 +2433,60 @@ def create_demo() -> gr.Blocks:
             outputs=outputs,
             show_progress="minimal",
         )
-        new_chat.click(
+        retry_event = chatbot.retry(
+            fn=retry_chat_gpt,
+            inputs=[
+                model_choice,
+                response_style,
+                max_new_tokens,
+                active_image_path_state,
+                history_state,
+                chatbot,
+                conversations_state,
+                active_conversation_id_state,
+            ],
+            outputs=outputs,
+            show_progress="minimal",
+        )
+        composer.stop(
+            fn=cancel_chat_request,
+            inputs=[
+                chatbot,
+                conversations_state,
+                active_conversation_id_state,
+                model_choice,
+            ],
+            outputs=[
+                chatbot,
+                timing,
+                conversations_state,
+                conversation_selector,
+                model_status,
+            ],
+            queue=False,
+            cancels=[submit_event, retry_event],
+        )
+        chatbot.example_select(
+            fn=populate_example,
+            outputs=composer,
+            queue=False,
+            show_progress="hidden",
+        )
+        composer.input(
+            fn=clear_composer_notice,
+            inputs=[composer, timing],
+            outputs=timing,
+            queue=False,
+            show_progress="hidden",
+        )
+        composer.change(
+            fn=clear_composer_notice,
+            inputs=[composer, timing],
+            outputs=timing,
+            queue=False,
+            show_progress="hidden",
+        )
+        new_chat_event = new_chat.click(
             fn=create_product_chat,
             inputs=conversations_state,
             outputs=[
@@ -1936,9 +2508,16 @@ def create_demo() -> gr.Blocks:
                 model_status,
             ],
             queue=False,
-            cancels=[submit_event],
+            show_progress="hidden",
+            cancels=[submit_event, retry_event],
         )
-        mobile_new_chat.click(
+        new_chat_event.then(
+            fn=close_rename_panel,
+            outputs=[rename_panel, rename_input],
+            queue=False,
+            show_progress="hidden",
+        )
+        mobile_new_chat_event = mobile_new_chat.click(
             fn=create_product_chat,
             inputs=conversations_state,
             outputs=[
@@ -1960,33 +2539,16 @@ def create_demo() -> gr.Blocks:
                 model_status,
             ],
             queue=False,
-            cancels=[submit_event],
+            show_progress="hidden",
+            cancels=[submit_event, retry_event],
         )
-        delete_chat.click(
-            fn=delete_product_chat,
-            inputs=[conversations_state, active_conversation_id_state],
-            outputs=[
-                composer,
-                chatbot,
-                timing,
-                active_image_path_state,
-                active_image_preview,
-                clear_image,
-                history_state,
-                history_table,
-                system_status,
-                conversations_state,
-                active_conversation_id_state,
-                conversation_selector,
-                model_choice,
-                response_style,
-                max_new_tokens,
-                model_status,
-            ],
+        mobile_new_chat_event.then(
+            fn=close_rename_panel,
+            outputs=[rename_panel, rename_input],
             queue=False,
-            cancels=[submit_event],
+            show_progress="hidden",
         )
-        conversation_selector.input(
+        conversation_event = conversation_selector.input(
             fn=conversation_view,
             inputs=[conversations_state, conversation_selector],
             outputs=[
@@ -2008,7 +2570,14 @@ def create_demo() -> gr.Blocks:
                 model_status,
             ],
             queue=False,
-            cancels=[submit_event],
+            show_progress="hidden",
+            cancels=[submit_event, retry_event],
+        )
+        conversation_event.then(
+            fn=close_rename_panel,
+            outputs=[rename_panel, rename_input],
+            queue=False,
+            show_progress="hidden",
         )
         clear_image.click(
             fn=clear_active_image,
@@ -2020,12 +2589,78 @@ def create_demo() -> gr.Blocks:
                 conversations_state,
             ],
             queue=False,
-            cancels=[submit_event],
+            show_progress="hidden",
+            cancels=[submit_event, retry_event],
+        )
+        rename_menu.click(
+            fn=open_rename_panel,
+            inputs=[conversations_state, active_conversation_id_state],
+            outputs=[rename_panel, rename_input],
+            queue=False,
+            show_progress="hidden",
+            js="""
+            (conversations, activeId) => {
+              const openedOptions = document.querySelector(
+                '.sidebar-options .label-wrap.open'
+              );
+              if (openedOptions) openedOptions.click();
+              return [conversations, activeId];
+            }
+            """,
+        )
+        rename_cancel.click(
+            fn=close_rename_panel,
+            outputs=[rename_panel, rename_input],
+            queue=False,
+            show_progress="hidden",
+        )
+        rename_save.click(
+            fn=rename_active_conversation,
+            inputs=[
+                rename_input,
+                conversations_state,
+                active_conversation_id_state,
+            ],
+            outputs=[
+                conversations_state,
+                conversation_selector,
+                rename_panel,
+                rename_input,
+            ],
+            queue=False,
+            show_progress="hidden",
+        )
+        rename_input.submit(
+            fn=rename_active_conversation,
+            inputs=[
+                rename_input,
+                conversations_state,
+                active_conversation_id_state,
+            ],
+            outputs=[
+                conversations_state,
+                conversation_selector,
+                rename_panel,
+                rename_input,
+            ],
+            queue=False,
+            show_progress="hidden",
         )
         model_choice.change(
             fn=model_readiness_html,
             inputs=model_choice,
             outputs=model_status,
+            queue=False,
+            show_progress="hidden",
+        )
+        sidebar_panel.expand(
+            fn=None,
+            js="() => document.documentElement.classList.add('vivqa-sidebar-open')",
+            queue=False,
+        )
+        sidebar_panel.collapse(
+            fn=None,
+            js="() => document.documentElement.classList.remove('vivqa-sidebar-open')",
             queue=False,
         )
         demo.load(
@@ -2050,6 +2685,7 @@ def create_demo() -> gr.Blocks:
                 model_status,
             ],
             queue=False,
+            show_progress="hidden",
         )
     return demo
 

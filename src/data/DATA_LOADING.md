@@ -16,7 +16,7 @@ from data import VQADataLoader
 loader = VQADataLoader(
     repo_id="Ouyangxuelili/vlsp2023-vqa-dataset",
     cache_dir="./data/cache",
-    use_auth_token=True,
+    use_auth_token=False,
 )
 
 # Load dataset
@@ -31,11 +31,9 @@ loader.print_sample(split="train", index=0)
 # Get individual splits
 train_dataset = loader.get_train()
 dev_dataset = loader.get_dev()
-test_dataset = loader.get_test()
 
 print(f"Train: {len(train_dataset)}")
 print(f"Dev: {len(dev_dataset)}")
-print(f"Test: {len(test_dataset)}")
 ```
 
 ## Using with Training
@@ -65,4 +63,4 @@ print(f"Sample keys: {list(processed_train[0].keys())}")
 - Automatic HuggingFace Hub integration
 - Dataset statistics and sampling
 - Message formatting for VLM training
-- Support for multiple splits (train, dev, test)
+- Support for the published train and dev splits

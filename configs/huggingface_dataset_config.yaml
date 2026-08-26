@@ -8,7 +8,6 @@ huggingface_dataset:
   splits:
     - train
     - dev
-    - test
   
   # Optional: Cache directory for downloaded data
   cache_dir: "./data/cache"
@@ -18,18 +17,16 @@ huggingface_dataset:
     timeout: 300  # seconds
     max_retries: 3
   
-  # Authentication
-  use_auth_token: true  # Set HF_TOKEN environment variable
+  # The dataset repository is public
+  use_auth_token: false
 
 # Local data paths (if you download to local)
 local_paths:
   train_images: "./data/raw/train"
   dev_images: "./data/raw/dev"
-  test_images: "./data/raw/test"
   
   train_json: "./data/raw/vlsp2023_train_data.json"
   dev_json: "./data/raw/vlsp2023_dev_data.json"
-  test_json: "./data/raw/vlsp2023_test_data.json"
 
 # Data loading preferences
 loading:
@@ -65,10 +62,11 @@ preprocessing:
 
 # Dataset statistics
 statistics:
-  train_samples: 10000  # Approximate
-  dev_samples: 2000
-  test_samples: 2000
-  total_samples: 14000
+  train_samples: 30833
+  dev_samples: 3545
+  total_samples: 34378
+  train_images: 9129
+  dev_referenced_images: 1070
   
 # Languages
 language: "vietnamese"

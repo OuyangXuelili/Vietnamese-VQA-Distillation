@@ -81,7 +81,7 @@ models:
 # Loading defaults
 loading_defaults:
   device: "cuda"
-  use_auth_token: true
+  use_auth_token: false
   streaming: false
   cache_dir: "./data/cache"
 

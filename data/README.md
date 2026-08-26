@@ -12,13 +12,11 @@ The Vi-VQA dataset is stored on HuggingFace Hub:
 data/
 ├── raw/                    # Raw data (downloaded from HuggingFace)
 │   ├── train/              # Training images
-│   ├── dev/                # Validation images
-│   └── test/               # Test images
+│   └── dev/                # Validation images (supplied separately)
 │
 ├── processed/              # Processed/cleaned data
 │   ├── train_processed.json
-│   ├── dev_processed.json
-│   └── test_processed.json
+│   └── dev_processed.json
 │
 └── cache/                  # Cache for Hugging Face datasets
     └── (auto-generated)
@@ -36,7 +34,6 @@ dataset = load_dataset("Ouyangxuelili/vlsp2023-vqa-dataset")
 # Access splits
 train_dataset = dataset["train"]
 dev_dataset = dataset["dev"]
-test_dataset = dataset["test"]
 ```
 
 ### Option 2: Load Local JSON Files
@@ -59,13 +56,12 @@ Expected format from HuggingFace:
 }
 ```
 
-## Data Statistics (Expected)
+## Data Statistics
 
 | Split | Samples | Images |
 |-------|---------|--------|
-| Train | ~10,000 | ~7,000 |
-| Dev   | ~2,000  | ~1,500 |
-| Test  | ~2,000  | ~1,500 |
+| Train | 30,833 | 9,129 |
+| Dev   | 3,545  | 1,070 referenced images |
 
 ## Important Notes
 
@@ -73,20 +69,7 @@ Expected format from HuggingFace:
 - Images are typically 256×256 or 512×512
 - Questions are in Vietnamese
 - Answers are short Vietnamese phrases (1-20 words)
-- The public repository currently has train and dev JSON only (no test JSON).
-- Public image files for the dev IDs 0-572 are missing. Use the train split for
-  a smoke evaluation, or pass a custom JSON with valid image paths to
-  `scripts/evaluate.py` for a real held-out evaluation.
-
-## Environment Setup
-
-To download from HuggingFace, you may need to set:
-```bash
-export HF_TOKEN=your_huggingface_token
-```
-
-Or authenticate in Python:
-```python
-from huggingface_hub import login
-login(token="your_token")
-```
+- The public repository has train and dev annotations, but no test split.
+- The 9,129 image files on the Hub cover the train split. The 1,070 images
+  referenced by dev annotations must be supplied separately for evaluation.
+- The repository is public, so a Hugging Face token is not required.

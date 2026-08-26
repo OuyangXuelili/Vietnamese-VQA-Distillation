@@ -34,16 +34,22 @@
 
 > Các repository model chứa **LoRA adapter sau fine-tune**. Khi chạy, ứng dụng ghép adapter với Qwen2-VL base model tương ứng. Bạn không cần train lại để dùng demo.
 
-## Điểm nổi bật
+## Chức năng hiện có
 
 | Khả năng | Mô tả |
 |---|---|
-| Hỏi đáp hình ảnh tiếng Việt | Nhận ảnh và câu hỏi tự nhiên bằng tiếng Việt |
-| Hai cấu hình suy luận | Teacher 7B cho chất lượng, Student 2B cho tốc độ |
-| Chạy không cần train lại | Tự lấy adapter công khai từ Hugging Face khi không có output local |
-| Offline-ready | Có lệnh tải trước base model và adapter vào máy |
-| Cấu hình hóa | Dataset, model, training và distillation được quản lý bằng YAML |
-| Giao diện demo | Upload ảnh, câu hỏi gợi ý, tùy chỉnh độ chi tiết và theo dõi thời gian |
+| Hỏi đáp bằng tiếng Việt | Tải hoặc dán ảnh, sau đó đặt câu hỏi bằng tiếng Việt |
+| Chọn mô hình | Chuyển giữa Teacher 7B và Student 2B ngay trên giao diện |
+| Chạy không cần train lại | Dùng adapter đã công bố trên Hugging Face hoặc output local |
+| Tùy chỉnh câu trả lời | Chọn cách trả lời và giới hạn số token sinh ra |
+| Theo dõi phiên hỏi đáp | Lưu lịch sử trong trình duyệt và hiển thị thời gian nạp, suy luận |
+| Quản lý VRAM | Chỉ giữ một mô hình trên GPU tại một thời điểm |
+
+## Giao diện demo
+
+<p align="center">
+  <img src="assets/demo-ui.png" alt="Giao diện demo ViVQA" width="100%" />
+</p>
 
 ## Kiến trúc
 
@@ -64,9 +70,25 @@ Tất cả tài nguyên đã được xuất bản công khai dưới namespace 
 |---|---|---|---|
 | Qwen-7B-Vi-VQA | Teacher sau fine-tune | Qwen2-VL-7B-Instruct | [Mở model](https://huggingface.co/Ouyangxuelili/Qwen-7B-Vi-VQA) |
 | Qwen-2B-ViVQA | Student sau distillation | Qwen2-VL-2B-Instruct | [Mở model](https://huggingface.co/Ouyangxuelili/Qwen-2B-ViVQA) |
-| VLSP2023 VQA | Dữ liệu train/dev/test | Ảnh + câu hỏi + câu trả lời | [Mở dataset](https://huggingface.co/datasets/Ouyangxuelili/vlsp2023-vqa-dataset) |
+| VLSP2023 VQA | 30.833 mẫu train và 3.545 mẫu dev | Ảnh + câu hỏi + câu trả lời | [Mở dataset](https://huggingface.co/datasets/Ouyangxuelili/vlsp2023-vqa-dataset) |
 
 Ứng dụng ưu tiên adapter trong `outputs-*/final_lora/`. Nếu không tìm thấy, model loader tự tải adapter từ Hugging Face. Base model được lấy từ namespace chính thức `Qwen` hoặc thư mục `models/` nếu đã tải trước.
+
+Dataset công khai hiện có 9.129 ảnh train. Tập dev tham chiếu 1.070 ảnh riêng,
+nhưng các ảnh này không nằm trong repository dataset trên Hugging Face; cần bổ
+sung ảnh dev từ bộ OpenViVQA gốc khi chạy đánh giá.
+
+## Kết quả đánh giá
+
+Hai mô hình được chạy tuần tự trên toàn bộ 3.545 câu hỏi–đáp của tập dev:
+
+| Mô hình | Exact Match | ROUGE-L | BERTScore F1 |
+|---|---:|---:|---:|
+| Teacher 7B | 0,1952 | 0,6538 | 0,8685 |
+| Student 2B sau KD | 0,1489 | 0,6176 | 0,8538 |
+
+Các giá trị trên được tính từ file dự đoán đã lưu sau khi chạy evaluation.
+Thư mục `results/` không được đưa lên Git vì chứa kết quả sinh trung gian.
 
 ## Chạy demo ngay
 
@@ -156,9 +178,7 @@ Nếu không dùng bản trên Drive, có thể clone repository rồi chạy th
 ```
 
 Hãy mở URL nằm sau dòng `Running on public URL` và giữ cell cuối tiếp tục
-chạy. URL này là tạm thời; mỗi phiên Colab sẽ tạo một URL mới. Script
-`scripts/run_colab_demo.py` vẫn được giữ lại như một lệnh tương thích, nhưng
-chỉ gọi lại `app.py --share` và không tạo tunnel `localhost.run` riêng.
+chạy. URL này là tạm thời; mỗi phiên Colab sẽ tạo một URL mới.
 
 Giao diện demo lưu tối đa 30 cuộc trò chuyện trong trình duyệt, tự đặt tên từ
 câu hỏi đầu tiên, cho phép xóa từng cuộc trò chuyện và tiếp tục hỏi về ảnh đang dùng. Khi gửi,
@@ -166,7 +186,8 @@ giao diện hiện ngay câu hỏi, trạng thái nạp/suy luận và bộ đ�
 đang dùng đúng model đã nạp thì model không được nạp lại. Trên T4, ứng dụng vẫn
 chỉ giữ **một model trong VRAM tại một thời điểm** để tránh thiếu bộ nhớ.
 
-Với repository GitHub đang để **Private**, Colab cần được xác thực GitHub trước khi clone. Các model và dataset Hugging Face hiện là public nên không cần token để chạy demo.
+Repository GitHub, hai adapter và dataset Hugging Face đều đang public nên
+không cần token để clone và chạy demo.
 
 ## Cấu hình phần cứng
 
@@ -244,6 +265,6 @@ python scripts/evaluate.py --help
 
 ## Tác giả và giấy phép
 
-Project được duy trì bởi **[OuyangXuelili](https://github.com/OuyangXuelili)**.
+Dự án do **[OuyangXuelili](https://github.com/OuyangXuelili)** thực hiện và duy trì.
 
 Mã nguồn được phát hành theo [MIT License](LICENSE). Qwen2-VL, dataset và các thư viện bên thứ ba tiếp tục tuân theo giấy phép và điều khoản tương ứng của chủ sở hữu.
