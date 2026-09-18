@@ -1,0 +1,16 @@
+dataset:
+  name: ViVQA-X
+  annotation_root: ${PROJECT_DRIVE_ROOT}/datasets/annotations
+  image_root: /content/vqa_work/coco
+  manifest_root: ${PROJECT_DRIVE_ROOT}/datasets/manifests
+  preference_root: ${PROJECT_DRIVE_ROOT}/datasets/preference
+  image_id_field: image_id
+  question_id_field: question_id
+  split_field: split
+  allowed_splits: [train, validation, test]
+
+audit:
+  verify_images: true
+  compute_image_hash: false
+  manual_review_target: 200
+

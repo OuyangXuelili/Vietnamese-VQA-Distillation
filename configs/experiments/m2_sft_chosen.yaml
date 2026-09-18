@@ -1,0 +1,5 @@
+experiment_id: M2_SFT_CHOSEN
+parent_checkpoint: M1_SFT
+training_stage: sft
+data_variant: preference_chosen_only
+

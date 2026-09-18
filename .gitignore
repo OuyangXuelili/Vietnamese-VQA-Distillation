@@ -1,0 +1,29 @@
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+.env
+.idea/
+.vscode/
+
+# Large or generated artifacts
+data/raw/
+data/processed/
+data/cache/
+artifacts/
+checkpoints/
+runs/
+outputs/
+wandb/
+*.safetensors
+*.bin
+*.pt
+*.pth
+
+# Local notebooks and OS files
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
+

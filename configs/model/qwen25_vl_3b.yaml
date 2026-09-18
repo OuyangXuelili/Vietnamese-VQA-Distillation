@@ -1,0 +1,17 @@
+model:
+  id: Qwen/Qwen2.5-VL-3B-Instruct
+  revision: null
+  trust_remote_code: false
+  dtype: bfloat16
+  attention_implementation: null
+  max_pixels: null
+  min_pixels: null
+
+peft:
+  enabled: true
+  method: lora
+  rank: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj]
+

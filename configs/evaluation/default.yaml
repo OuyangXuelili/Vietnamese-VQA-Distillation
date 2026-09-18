@@ -1,0 +1,14 @@
+answer:
+  metrics: [exact_match, token_f1]
+  unicode_normalization: NFC
+  lowercase: true
+
+explanation:
+  automatic_metrics: [rouge_l]
+  human_sample_size: 250
+  rubric: [visual_grounding, answer_support, clarity]
+
+generation:
+  do_sample: false
+  max_new_tokens: 128
+

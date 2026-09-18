@@ -1,0 +1,6 @@
+experiment_id: M3_DPO
+parent_checkpoint: M1_SFT
+reference_checkpoint: M1_SFT
+training_stage: dpo
+data_variant: preference_pairs
+

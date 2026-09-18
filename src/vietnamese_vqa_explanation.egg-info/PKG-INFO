@@ -1,0 +1,105 @@
+Metadata-Version: 2.4
+Name: vietnamese-vqa-explanation
+Version: 0.1.0
+Summary: Reproducible SFT and DPO experiments for Vietnamese explainable VQA
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: pyyaml>=6.0
+Requires-Dist: pillow>=10.0
+Requires-Dist: numpy>=1.26
+Provides-Extra: train
+Requires-Dist: torch>=2.4; extra == "train"
+Requires-Dist: transformers>=4.49; extra == "train"
+Requires-Dist: datasets>=3.0; extra == "train"
+Requires-Dist: accelerate>=1.2; extra == "train"
+Requires-Dist: peft>=0.14; extra == "train"
+Requires-Dist: trl>=0.15; extra == "train"
+Requires-Dist: bitsandbytes>=0.45; platform_system != "Windows" and extra == "train"
+Provides-Extra: eval
+Requires-Dist: pandas>=2.2; extra == "eval"
+Requires-Dist: scipy>=1.13; extra == "eval"
+Requires-Dist: rouge-score>=0.1.2; extra == "eval"
+Requires-Dist: matplotlib>=3.9; extra == "eval"
+Provides-Extra: demo
+Requires-Dist: gradio>=5.0; extra == "demo"
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: pytest-cov>=5.0; extra == "dev"
+Requires-Dist: ruff>=0.8; extra == "dev"
+
+# Vietnamese VQA Explanation
+
+Mã nguồn cho đề tài **Nghiên cứu cải thiện chất lượng lời giải thích trong hỏi đáp hình ảnh tiếng Việt**.
+
+Hệ thống nhận ảnh và câu hỏi tiếng Việt, sau đó sinh đáp án kèm lời giải thích. Thực nghiệm chính so sánh mô hình pretrained, SFT, SFT tiếp trên dữ liệu tốt và DPO trên các cặp lời giải thích được ưu tiên.
+
+## Câu hỏi nghiên cứu
+
+DPO có giúp lời giải thích phù hợp với nội dung ảnh hơn SFT tiếp trên cùng nguồn dữ liệu tốt hay không, và độ chính xác đáp án thay đổi như thế nào?
+
+## Nguyên tắc thiết kế
+
+- Logic dùng lại nằm trong `src/`; notebook chỉ gọi CLI và hiển thị kết quả.
+- Mỗi thí nghiệm có cấu hình riêng, seed, Git commit và phiên bản dữ liệu.
+- Test được giữ riêng; không dùng test để chọn prompt, checkpoint hoặc siêu tham số.
+- Ảnh, model cache, checkpoint và log lớn nằm ngoài Git.
+- Dữ liệu ưu tiên giữ nguồn gốc, loại lỗi và trạng thái kiểm tra.
+
+## Cấu trúc
+
+```text
+configs/                 cấu hình dữ liệu, model, train và từng thí nghiệm
+src/vqa_explanation/     package chính
+scripts/                 các entry point chạy từ command line
+tests/                   unit test và integration smoke test
+notebooks/               khám phá dữ liệu và điều phối Colab
+app/                     Gradio demo
+docs/                    giao thức dữ liệu, thí nghiệm và tái lập
+data/sample/             dữ liệu nhỏ phục vụ test
+reports/                 bảng và hình dùng trong báo cáo
+```
+
+## Bốn cấu hình chính
+
+| Mã | Cấu hình | Vai trò |
+|---|---|---|
+| M0 | Pretrained | Mốc trước thích nghi |
+| M1 | SFT trên ViVQA-X | Baseline chính |
+| M2 | M1 + SFT trên chosen | Kiểm soát lợi ích của dữ liệu tốt |
+| M3 | M1 + DPO trên chosen/rejected | Kiểm tra lợi ích của học ưu tiên |
+
+## Thiết lập ban đầu
+
+```bash
+python -m venv .venv
+pip install -e ".[dev]"
+pytest
+```
+
+Kiểm tra file ViVQA-X đã chuẩn hóa:
+
+```bash
+python scripts/audit_dataset.py \
+  --input data/sample/vivqax_sample.jsonl \
+  --output artifacts/audit/sample_audit.json
+```
+
+Kiểm tra dữ liệu ưu tiên:
+
+```bash
+python scripts/validate_preferences.py \
+  --input data/sample/preference_sample.jsonl
+```
+
+## Trạng thái
+
+Repository hiện ở giai đoạn scaffold. Các module kiểm tra schema, audit dữ liệu, kiểm tra split và metric cơ bản đã có test. Trainer SFT/DPO sẽ chỉ được triển khai sau khi xác nhận schema thật của ViVQA-X và chạy smoke test backbone trên GPU cloud.
+
+## Lưu trữ cloud
+
+- Repo: code, config, test và tài liệu.
+- Google Drive: annotation, manifest, preference data, checkpoint, prediction và log.
+- `/content/vqa_work`: ảnh COCO đã giải nén và cache tạm trong phiên Colab.
+
+Không đưa token, ảnh COCO, checkpoint hoặc model cache lên GitHub.
+
