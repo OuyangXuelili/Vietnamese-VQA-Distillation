@@ -7,7 +7,11 @@ from typing import Iterable
 from .schema import VQASample
 
 
-def audit_records(records: Iterable[dict], verify_images: bool = False) -> dict:
+def audit_records(
+    records: Iterable[dict],
+    verify_images: bool = False,
+    image_root: str | Path | None = None,
+) -> dict:
     counts = Counter()
     errors: list[dict] = []
     images_by_split: dict[str, set[str]] = defaultdict(set)
@@ -28,7 +32,10 @@ def audit_records(records: Iterable[dict], verify_images: bool = False) -> dict:
         if sample.question_id in seen_questions:
             counts["duplicate_question_ids"] += 1
         seen_questions.add(sample.question_id)
-        if verify_images and not Path(sample.image_path).is_file():
+        image_path = Path(sample.image_path)
+        if image_root is not None:
+            image_path = Path(image_root) / image_path
+        if verify_images and not image_path.is_file():
             counts["missing_images"] += 1
 
     overlaps = {}
@@ -44,4 +51,3 @@ def audit_records(records: Iterable[dict], verify_images: bool = False) -> dict:
         "image_overlap_by_split": overlaps,
         "errors": errors,
     }
-

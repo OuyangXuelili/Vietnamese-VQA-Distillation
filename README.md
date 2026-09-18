@@ -57,6 +57,15 @@ Lệnh trên đọc ba annotation gốc trong `data/raw/vivqax/annotations/`, t�
 chuẩn hóa, thống kê và danh sách chính xác các ảnh COCO cần tải trong
 `data/processed/vivqax/`.
 
+Tải tập smoke test cố định gồm 400 ảnh train, 50 validation và 50 test:
+
+```bash
+python scripts/download_coco_smoke.py
+```
+
+Script chỉ chọn các ảnh thuộc riêng một split, kiểm tra định dạng JPEG và có thể
+chạy lại an toàn vì ảnh hợp lệ đã tồn tại sẽ được bỏ qua.
+
 Kiểm tra dữ liệu ưu tiên:
 
 ```bash
