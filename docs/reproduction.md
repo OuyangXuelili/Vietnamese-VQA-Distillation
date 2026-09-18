@@ -26,3 +26,10 @@ và 50 test. Các ảnh trùng giữa validation và test không được chọn
 5. Chỉ sau khi smoke test đạt mới lấy đủ 28.180 ảnh.
 6. Huấn luyện M1, tạo preference data, huấn luyện M2/M3.
 7. Đóng băng checkpoint rồi đánh giá test.
+
+## Cổng kiểm tra M0
+
+Chạy trước 20 mẫu validation bằng `scripts/run_m0.py`. Mỗi bản ghi đầu ra phải
+giữ model revision, seed, ID mẫu, đáp án chuẩn, lời giải thích chuẩn, đầu ra thô,
+kết quả đã tách và thời gian suy luận. Không dùng test split ở giai đoạn chọn
+prompt. Nếu 4-bit không khả dụng, bỏ `--load-in-4bit` và dùng runtime có đủ VRAM.

@@ -1,9 +1,9 @@
 # Notebooks
 
-- `00_colab_setup.ipynb`: mount Drive, clone repo, kiểm tra GPU và môi trường.
-- `01_dataset_exploration.ipynb`: biểu đồ và đọc mẫu sau khi audit bằng script.
-- `02_model_sanity_check.ipynb`: suy luận và smoke test backbone.
-- `03_result_analysis.ipynb`: đọc prediction đã đóng băng để tạo bảng và hình.
+- `00_colab_setup.ipynb`: mount Drive, kiểm tra checksum và giải nén bộ smoke.
+- `01_m0_smoke.ipynb`: cài source snapshot, chạy M0 trên 20 mẫu validation và
+  lưu prediction về Drive.
+- Các notebook khám phá dữ liệu và phân tích kết quả chỉ được thêm khi script
+  tương ứng đã ổn định.
 
 Không đặt trainer, metric hoặc logic tiền xử lý chỉ tồn tại trong notebook.
-

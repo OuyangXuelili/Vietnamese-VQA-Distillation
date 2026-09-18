@@ -76,8 +76,19 @@ python scripts/validate_preferences.py \
 ## Trạng thái
 
 Schema thật của ViVQA-X đã được xác nhận và pipeline chuẩn hóa hiện xử lý 32.886
-mẫu hỏi–đáp, 41.817 lời giải thích và 28.180 ảnh độc nhất. Bước kế tiếp là tải
-một tập ảnh nhỏ để smoke test backbone trên GPU cloud trước khi lấy toàn bộ ảnh.
+mẫu hỏi–đáp, 41.817 lời giải thích và 28.180 ảnh độc nhất. Bộ smoke 500 ảnh đã
+được tải và kiểm tra. Bước kế tiếp là chạy M0 trên GPU cloud:
+
+```bash
+python scripts/run_m0.py \
+  --annotations /content/drive/MyDrive/Vietnamese_VQA_NLE/datasets/processed/smoke_500.jsonl \
+  --image-root /content/vqa_work/coco \
+  --output /content/drive/MyDrive/Vietnamese_VQA_NLE/predictions/M0_smoke.jsonl \
+  --split validation --limit 20 --load-in-4bit
+```
+
+M0 dùng greedy decoding và revision model cố định. Chỉ khi đầu ra có đúng cấu trúc
+`Đáp án`/`Giải thích`, không lỗi ảnh và tốc độ phù hợp mới mở SFT smoke test.
 
 ## Lưu trữ cloud
 
