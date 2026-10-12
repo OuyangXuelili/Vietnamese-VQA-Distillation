@@ -23,6 +23,14 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 - Actions phát hiện `ModuleNotFoundError: scripts` khi gọi executable pytest.
   CI nay dùng `python -m pytest`; cấu hình pytest thêm gốc repo vào pythonpath
   để các test import script có cùng cách resolve khi dùng executable hoặc module.
+- `check_project.py` trên source hiện hành qua Ruff và toàn bộ 831 test.
+  Kiểm source-only local qua với fail-on-skip; sáu kiểm lịch sử được deselect.
+- Actions của commit `dec65fb` thành công trên cả Python 3.10 và 3.11:
+  [CI 38243446356](https://github.com/OuyangXuelili/Vietnamese-VQA-Distillation/actions/runs/38243446356).
+- Release cuối sau sửa CI: `source_20261012_113653_701242`, 231 file.
+  Đã upload ZIP/checksum vào Drive `source/releases`, tải lại ZIP và hash khớp
+  `9a4c37bee29caf9fc4b60905a1e74d116b0eb4819166e9e20c6692a07bc946c3`.
+  Code/config trong release khớp commit CI `dec65fb`; nhật ký cập nhật riêng sau đóng ZIP.
 - Giữ marker historical và fail-on-skip của CI source. Không đổi code train,
   dữ liệu, checkpoint hoặc giao thức. Log failure và regression ở
   `artifacts/code_cleanup_20261012`.
@@ -175,7 +183,7 @@ Repo local của nhánh VQA Explanation chưa có remote trước lượt này.
 Source hiện hành đã push lên nhánh `codex/vqa-explanation`, commit
 `569b6b8103af15b93c528770cf85d0cac08c3fa6`; `git ls-remote` khớp HEAD local.
 Git giữ source/config/test/tài liệu; data đầy đủ, checkpoint và log nằm ngoài Git.
-CI mới đang chạy; kiểm local đã qua. Mỗi lần cập nhật nhật ký sau đóng ZIP
+CI code hiện hành đã qua trên Python 3.10/3.11; xem biên bản ở mục CI phía trên. Mỗi lần cập nhật nhật ký sau đóng ZIP
 được đồng bộ riêng, còn snapshot source đã đóng giữ nguyên.
 
 ## Việc tiếp theo
