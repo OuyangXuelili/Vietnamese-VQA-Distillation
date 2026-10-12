@@ -1,2 +1,1 @@
-"""Training modules are implemented after the data and backbone smoke tests."""
-
+"""SFT training and GPU pilot modules."""

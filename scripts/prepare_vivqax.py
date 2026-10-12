@@ -27,8 +27,9 @@ def main() -> None:
 
     annotation_dir = Path(args.annotation_dir)
     output_dir = Path(args.output_dir)
+    if output_dir.exists():
+        parser.error(f"Output already exists; choose a new dataset version: {output_dir}")
     manifest_dir = output_dir / "manifests"
-    manifest_dir.mkdir(parents=True, exist_ok=True)
 
     normalized: list[dict] = []
     split_counts: dict[str, int] = {}
@@ -36,10 +37,21 @@ def main() -> None:
         records = [normalize_record(row, split) for row in load_raw_split(annotation_dir, split)]
         split_counts[split] = len(records)
         normalized.extend(records)
+    if not normalized:
+        raise ValueError("ViVQA-X annotations are empty")
+    audit = audit_records(normalized, verify_images=False)
+    if audit["errors"] or audit["counts"].get("duplicate_question_ids", 0):
+        raise ValueError("ViVQA-X annotations failed the record/ID audit")
+    manifest = image_manifest(normalized)
+
+    manifest_dir.mkdir(parents=True)
+    offset = 0
+    for split in RAW_FILES:
+        records = normalized[offset : offset + split_counts[split]]
+        offset += split_counts[split]
         write_jsonl(output_dir / f"{split}.jsonl", records)
     write_jsonl(output_dir / "all.jsonl", normalized)
 
-    manifest = image_manifest(normalized)
     with (manifest_dir / "images.csv").open("w", encoding="utf-8", newline="") as handle:
         writer = csv.DictWriter(handle, fieldnames=list(manifest[0]))
         writer.writeheader()
@@ -54,7 +66,6 @@ def main() -> None:
         )
 
     overlap_counts = Counter(row["dataset_splits"] for row in manifest)
-    audit = audit_records(normalized, verify_images=False)
     stats = {
         "qa_pairs_by_split": split_counts,
         "qa_pairs_total": len(normalized),

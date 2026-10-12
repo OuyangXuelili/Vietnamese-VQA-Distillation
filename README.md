@@ -1,99 +1,89 @@
 # Vietnamese VQA Explanation
 
-Mã nguồn cho đề tài **Nghiên cứu cải thiện chất lượng lời giải thích trong hỏi đáp hình ảnh tiếng Việt**.
+Mã nguồn cho đề tài **Nghiên cứu cải thiện chất lượng lời giải thích trong
+hỏi đáp hình ảnh tiếng Việt**. Đầu vào là ảnh và câu hỏi tiếng Việt; đầu ra
+gồm đáp án và lời giải thích.
 
-Hệ thống nhận ảnh và câu hỏi tiếng Việt, sau đó sinh đáp án kèm lời giải thích. Thực nghiệm chính so sánh mô hình pretrained, SFT, SFT tiếp trên dữ liệu tốt và DPO trên các cặp lời giải thích được ưu tiên.
+Đọc [kế hoạch](docs/research_plan.md) để thực hiện và [TIEN_DO.md](TIEN_DO.md)
+để biết việc đã chạy. [Mô tả dự án](docs/project_description.md) giải thích
+bài toán, dữ liệu và kết quả.
 
-## Câu hỏi nghiên cứu
+## Trạng thái — 12/10/2026
 
-DPO có giúp lời giải thích phù hợp với nội dung ảnh hơn SFT tiếp trên cùng nguồn dữ liệu tốt hay không, và độ chính xác đáp án thay đổi như thế nào?
+- M1 đã học một epoch, chọn checkpoint-3683 bằng loss trên 256 validation.
+  Đánh giá đủ 1.407 validation: EM 70,93%, Token-F1 75,11%, ROUGE-L 44,29%,
+  BERTScore 82,47%. [Bảng điểm và CI](reports/generated/m0_m1_validation_20261011/README.md).
+- Có 2.000 ứng viên train-only; pilot 100 ảnh có 13 nháp AI, 0 accepted.
+  [Trang duyệt hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/pilot_review_qc_20261012.html).
+- Trainer M2/M3 đã kiểm local; chưa train GPU. Demo replay đã có,
+  live chưa nghiệm thu GPU. Chưa có kết quả test cuối.
 
-## Nguyên tắc thiết kế
+## Các nhánh
 
-- Logic dùng lại nằm trong `src/`; notebook chỉ gọi CLI và hiển thị kết quả.
-- Mỗi thí nghiệm có cấu hình riêng, seed, Git commit và phiên bản dữ liệu.
-- Test được giữ riêng; không dùng test để chọn prompt, checkpoint hoặc siêu tham số.
-- Ảnh, model cache, checkpoint và log lớn nằm ngoài Git.
-- Dữ liệu ưu tiên giữ nguồn gốc, loại lỗi và trạng thái kiểm tra.
+| Mã | Cấu hình |
+|---|---|
+| M0 | Qwen2.5-VL-3B-Instruct gốc |
+| M1 | SFT trên ViVQA-X |
+| M2 | Từ M1, SFT tiếp trên chosen |
+| M3 | Từ cùng M1, DPO trên chosen/rejected |
 
-## Cấu trúc
+M2/M3 dùng cùng câu/ảnh/chosen, seed, epoch và LR 5e-6. Sửa protocol trước
+train để giảm nhiễu do khác LR; không coi là cùng chi phí tính toán.
+Test giữ kín tới khi khóa lựa chọn; ROUGE/BERTScore không thay đánh giá theo ảnh.
+
+## Tổ chức
 
 ```text
-configs/                 cấu hình dữ liệu, model, train và từng thí nghiệm
-src/vqa_explanation/     package chính
-scripts/                 các entry point chạy từ command line
-tests/                   unit test và integration smoke test
-notebooks/               khám phá dữ liệu và điều phối Colab
-app/                     Gradio demo
-docs/                    giao thức dữ liệu, thí nghiệm và tái lập
-data/sample/             dữ liệu nhỏ phục vụ test
-reports/                 bảng và hình dùng trong báo cáo
+src/vqa_explanation/     dữ liệu, train, suy luận, đánh giá và demo
+scripts/                CLI
+configs/                thuật toán và đường dẫn từng môi trường
+tests/                  kiểm thử
+notebooks/              notebook 03 điều phối; bản cũ ở archive
+app/static/             giao diện demo
+docs/, reports/         hướng dẫn, bảng và hình
+data/, runs/, artifacts/ dữ liệu, checkpoint và bằng chứng ngoài Git
 ```
 
-## Bốn cấu hình chính
+[Mục lục artifacts](artifacts/README.md) chỉ rõ bản duyệt, báo cáo pilot và
+source release đang dùng. HTML/CSS/JavaScript của editor nằm riêng trong
+`src/vqa_explanation/preference/templates/` và được nhúng khi xuất trang duyệt.
+[Quy trình review](docs/code_review.md) mô tả các kiểm tra cần có trước khi đồng bộ.
 
-| Mã | Cấu hình | Vai trò |
-|---|---|---|
-| M0 | Pretrained | Mốc trước thích nghi |
-| M1 | SFT trên ViVQA-X | Baseline chính |
-| M2 | M1 + SFT trên chosen | Kiểm soát lợi ích của dữ liệu tốt |
-| M3 | M1 + DPO trên chosen/rejected | Kiểm tra lợi ích của học ưu tiên |
+## Local
 
-## Thiết lập ban đầu
+Tại repo, dùng Python 3.10+ và môi trường riêng:
 
-```bash
+```powershell
 python -m venv .venv
-pip install -e ".[dev]"
-pytest
+.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
+.\.venv\Scripts\python.exe scripts/check_project.py
 ```
 
-Kiểm tra file ViVQA-X đã chuẩn hóa:
+Máy hiện tại có annotation và 28.180 ảnh ViVQA-X tham chiếu, không tải lại.
+Profile `configs/environments/local_full.yaml` dùng dữ liệu đầy đủ;
+`local.yaml` dùng smoke 500 ảnh. Local không mount Drive hoặc train Qwen CPU.
+Checkout mới: xem [dữ liệu](docs/data_protocol.md) và
+[local/cloud](docs/local_cloud.md). Kiểm trainer nhỏ cần thêm
+`.[verification]`, không cài môi trường CUDA lên máy này.
 
-```bash
-python scripts/prepare_vivqax.py
-```
+## Việc tiếp theo
 
-Lệnh trên đọc ba annotation gốc trong `data/raw/vivqax/annotations/`, tạo JSONL
-chuẩn hóa, thống kê và danh sách chính xác các ảnh COCO cần tải trong
-`data/processed/vivqax/`.
+1. Xác nhận pilot và chốt N: [gán nhãn](docs/preference_annotation.md).
+2. Export/freeze bộ cặp chung, kiểm GPU rồi train: [M2/M3](docs/preference_training.md).
+3. Validation/test, chấm theo ảnh: [giao thức](docs/experiment_protocol.md),
+   [chấm mù](docs/human_evaluation.md).
+4. Hoàn thiện [demo](docs/demo.md), phân tích và báo cáo.
 
-Tải tập smoke test cố định gồm 400 ảnh train, 50 validation và 50 test:
+[Harness](docs/harness.md) là kiểm code/provenance, không phải kết quả mô hình.
+Notebook 00–08 và các run cũ giữ để tái lập, không chạy lại lần lượt.
 
-```bash
-python scripts/download_coco_smoke.py
-```
+## Lưu trữ
 
-Script chỉ chọn các ảnh thuộc riêng một split, kiểm tra định dạng JPEG và có thể
-chạy lại an toàn vì ảnh hợp lệ đã tồn tại sẽ được bỏ qua.
+Git giữ source/config/test; Drive giữ dataset bundle, checkpoint, prediction
+và log. Colab `/content` là ổ tạm. Source release có checksum, không chứa
+ảnh, trọng số hoặc credentials.
 
-Kiểm tra dữ liệu ưu tiên:
-
-```bash
-python scripts/validate_preferences.py \
-  --input data/sample/preference_sample.jsonl
-```
-
-## Trạng thái
-
-Schema thật của ViVQA-X đã được xác nhận và pipeline chuẩn hóa hiện xử lý 32.886
-mẫu hỏi–đáp, 41.817 lời giải thích và 28.180 ảnh độc nhất. Bộ smoke 500 ảnh đã
-được tải và kiểm tra. Bước kế tiếp là chạy M0 trên GPU cloud:
-
-```bash
-python scripts/run_m0.py \
-  --annotations /content/drive/MyDrive/Vietnamese_VQA_NLE/datasets/processed/smoke_500.jsonl \
-  --image-root /content/vqa_work/coco \
-  --output /content/drive/MyDrive/Vietnamese_VQA_NLE/predictions/M0_smoke.jsonl \
-  --split validation --limit 20 --load-in-4bit
-```
-
-M0 dùng greedy decoding và revision model cố định. Chỉ khi đầu ra có đúng cấu trúc
-`Đáp án`/`Giải thích`, không lỗi ảnh và tốc độ phù hợp mới mở SFT smoke test.
-
-## Lưu trữ cloud
-
-- Repo: code, config, test và tài liệu.
-- Google Drive: annotation, manifest, preference data, checkpoint, prediction và log.
-- `/content/vqa_work`: ảnh COCO đã giải nén và cache tạm trong phiên Colab.
-
-Không đưa token, ảnh COCO, checkpoint hoặc model cache lên GitHub.
+CI chạy kiểm CPU trên Python 3.10 và 3.11, có dependency cho trainer nhỏ,
+API và Node để kiểm lưu nháp. `pytest -m "not historical" --fail-on-skip`
+không cho bỏ qua kiểm tra source vì thiếu dependency. Nhóm `historical` cần
+artifact run ngoài Git và vẫn được chạy khi kiểm toàn bộ trên máy này.

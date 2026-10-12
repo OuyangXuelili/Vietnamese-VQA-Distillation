@@ -1,14 +1,17 @@
 from __future__ import annotations
 
+import hashlib
+import json
 from pathlib import Path
 
 from PIL import Image
 
 from vqa_explanation.inference.prompting import SYSTEM_PROMPT, build_user_prompt
+from vqa_explanation.training.sft import supports_native_bf16
 
 
 class Qwen25VLRunner:
-    """Thin inference adapter; heavyweight imports stay optional for local tooling."""
+    """Qwen2.5-VL inference with an optional LoRA adapter."""
 
     def __init__(
         self,
@@ -18,6 +21,7 @@ class Qwen25VLRunner:
         load_in_4bit: bool = False,
         min_pixels: int = 256 * 28 * 28,
         max_pixels: int = 1024 * 28 * 28,
+        adapter_path: str | None = None,
     ) -> None:
         try:
             import torch
@@ -31,12 +35,13 @@ class Qwen25VLRunner:
                 'Install the training dependencies with: pip install -e ".[train]"'
             ) from exc
 
+        dtype = torch.bfloat16 if supports_native_bf16(torch.cuda) else torch.float16
         quantization_config = None
         if load_in_4bit:
             quantization_config = BitsAndBytesConfig(
                 load_in_4bit=True,
                 bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_compute_dtype=dtype,
             )
 
         self.processor = AutoProcessor.from_pretrained(
@@ -49,12 +54,43 @@ class Qwen25VLRunner:
             model_id,
             revision=revision,
             device_map="auto",
-            dtype=torch.bfloat16,
+            torch_dtype=dtype,
             quantization_config=quantization_config,
             attn_implementation="sdpa",
         )
+        if adapter_path:
+            from peft import PeftModel
+
+            self.model = PeftModel.from_pretrained(self.model, adapter_path, is_trainable=False)
+        self.model.config.use_cache = True
         self.model.eval()
         self.torch = torch
+        self.min_pixels = min_pixels
+        self.max_pixels = max_pixels
+        self.load_in_4bit = load_in_4bit
+        self.compute_dtype = str(dtype)
+
+    def protocol_metadata(self, max_new_tokens: int) -> dict:
+        """Return the loaded prompt template and generation settings used for inference."""
+        generation = self.model.generation_config.to_dict()
+        generation.update(do_sample=False, max_new_tokens=max_new_tokens)
+        prompt_spec = {
+            "system": SYSTEM_PROMPT,
+            "user_template": build_user_prompt("<QUESTION>"),
+            "chat_template": self.processor.chat_template,
+        }
+        digest = hashlib.sha256(
+            json.dumps(prompt_spec, ensure_ascii=False, sort_keys=True).encode("utf-8")
+        ).hexdigest()
+        return {
+            "min_pixels": self.min_pixels,
+            "max_pixels": self.max_pixels,
+            "max_new_tokens": max_new_tokens,
+            "load_in_4bit": self.load_in_4bit,
+            "prompt_sha256": digest,
+            "generation_config": generation,
+            "compute_dtype": self.compute_dtype,
+        }
 
     def generate(self, image_path: Path, question: str, *, max_new_tokens: int = 128) -> str:
         messages = [

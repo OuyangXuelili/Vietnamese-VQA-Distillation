@@ -17,7 +17,10 @@ và 50 test. Các ảnh trùng giữa validation và test không được chọn
 - SHA-256 của `coco_smoke_500.zip`:
   `4e0fce747dee9a1beaf36e2617deae6582115020d7c219f315525e329a4024f9`.
 
-## Thứ tự thực nghiệm
+## Thứ tự thực nghiệm ban đầu (mốc lịch sử)
+
+Trạng thái hiện tại và các bước còn lại nằm trong [TIEN_DO.md](../TIEN_DO.md)
+và [kế hoạch thực hiện](research_plan.md); danh sách dưới ghi thứ tự khởi động dự án.
 
 1. Tạo môi trường và cài package.
 2. Chạy notebook Colab bootstrap và kiểm tra đủ 500 ảnh.

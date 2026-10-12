@@ -1,9 +1,9 @@
 dataset:
   name: ViVQA-X
-  annotation_root: ${PROJECT_DRIVE_ROOT}/datasets/annotations
-  image_root: /content/vqa_work/coco
-  manifest_root: ${PROJECT_DRIVE_ROOT}/datasets/manifests
-  preference_root: ${PROJECT_DRIVE_ROOT}/datasets/preference
+  annotation_root: data/raw/vivqax/annotations
+  image_root: data/raw/coco
+  manifest_root: data/processed/vivqax/manifests
+  preference_root: data/preferences
   image_id_field: image_id
   question_id_field: question_id
   split_field: split
@@ -13,4 +13,3 @@ audit:
   verify_images: true
   compute_image_hash: false
   manual_review_target: 200
-

@@ -12,6 +12,9 @@ def main() -> None:
     parser.add_argument("--output", required=True)
     parser.add_argument("--verify-images", action="store_true")
     parser.add_argument("--image-root")
+    parser.add_argument(
+        "--strict", action="store_true", help="Fail on invalid data or split overlap"
+    )
     args = parser.parse_args()
     report = audit_records(
         read_jsonl(args.input),
@@ -21,6 +24,22 @@ def main() -> None:
     write_json(args.output, report)
     print(f"Audit written to {args.output}")
     print(report["counts"])
+    if args.strict and (
+        not report["counts"].get("records", 0)
+        or any(
+            report["counts"].get(k, 0)
+            for k in (
+                "invalid",
+                "duplicate_question_ids",
+                "missing_images",
+                "corrupt_images",
+                "unsafe_image_paths",
+            )
+        )
+        or any(report["image_overlap_by_split"].values())
+        or any(report["image_path_overlap_by_split"].values())
+    ):
+        raise SystemExit("Dataset audit failed; inspect the saved report")
 
 
 if __name__ == "__main__":

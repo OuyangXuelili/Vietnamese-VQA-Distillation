@@ -30,20 +30,35 @@ class ParsedPrediction:
 
 def parse_prediction(text: str) -> ParsedPrediction:
     cleaned = text.strip()
-    answer_match = re.search(
-        r"(?:^|\n)\s*Đáp\s*án\s*:\s*(.+?)(?=\n\s*Giải\s*thích\s*:|$)",
-        cleaned,
-        flags=re.IGNORECASE | re.DOTALL,
+    answer_pattern = r"^[ \t]*Đáp[ \t]*án[ \t]*:[ \t]*([^\r\n]*)"
+    explanation_pattern = r"^[ \t]*Giải[ \t]*thích[ \t]*:[ \t]*([^\r\n]*)"
+    answer_matches = list(re.finditer(answer_pattern, cleaned, flags=re.IGNORECASE | re.MULTILINE))
+    explanation_matches = list(
+        re.finditer(explanation_pattern, cleaned, flags=re.IGNORECASE | re.MULTILINE)
     )
-    explanation_match = re.search(
-        r"(?:^|\n)\s*Giải\s*thích\s*:\s*(.+)$",
-        cleaned,
-        flags=re.IGNORECASE | re.DOTALL,
+    answer = answer_matches[0].group(1).strip() if answer_matches else ""
+    explanation = ""
+    if explanation_matches:
+        start = explanation_matches[0].start(1)
+        following_labels = [
+            match.start()
+            for match in (*answer_matches, *explanation_matches)
+            if match.start() > explanation_matches[0].start()
+        ]
+        explanation = cleaned[start : min(following_labels, default=len(cleaned))].strip()
+    format_pattern = (
+        r"\A[ \t]*Đáp[ \t]*án[ \t]*:[ \t]*([^\r\n]*)\r?\n"
+        r"[ \t]*Giải[ \t]*thích[ \t]*:[ \t]*(.*?)\Z"
     )
-    answer = answer_match.group(1).strip() if answer_match else ""
-    explanation = explanation_match.group(1).strip() if explanation_match else ""
+    expected_format = re.fullmatch(format_pattern, cleaned, flags=re.IGNORECASE | re.DOTALL)
     return ParsedPrediction(
         answer=answer,
         explanation=explanation,
-        format_valid=bool(answer and explanation),
+        format_valid=bool(
+            expected_format
+            and len(answer_matches) == 1
+            and len(explanation_matches) == 1
+            and answer
+            and explanation
+        ),
     )

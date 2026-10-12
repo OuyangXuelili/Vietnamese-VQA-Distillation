@@ -7,6 +7,7 @@ import numpy as np
 
 
 def set_seed(seed: int) -> None:
+    """Seed Python, NumPy and Torch; PYTHONHASHSEED affects only new processes."""
     os.environ["PYTHONHASHSEED"] = str(seed)
     random.seed(seed)
     np.random.seed(seed)
@@ -18,4 +19,3 @@ def set_seed(seed: int) -> None:
             torch.cuda.manual_seed_all(seed)
     except ImportError:
         pass
-

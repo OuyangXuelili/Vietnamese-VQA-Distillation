@@ -13,10 +13,13 @@ __pycache__/
 data/raw/
 data/processed/
 data/cache/
-artifacts/
+data/preferences/
+artifacts/*
+!artifacts/README.md
 checkpoints/
 runs/
 outputs/
+reports/generated/
 wandb/
 *.safetensors
 *.bin

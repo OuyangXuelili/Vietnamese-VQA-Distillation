@@ -5,10 +5,10 @@ dataset:
     train: 400
     validation: 50
     test: 50
-  annotation_file: ${PROJECT_DRIVE_ROOT}/datasets/processed/smoke_500.jsonl
-  manifest_file: ${PROJECT_DRIVE_ROOT}/datasets/manifests/smoke_500.csv
-  image_archive: ${PROJECT_DRIVE_ROOT}/datasets/images/coco_smoke_500.zip
-  runtime_image_root: /content/vqa_work/coco
+  annotation_file: data/processed/vivqax/smoke_500.jsonl
+  manifest_file: data/processed/vivqax/manifests/smoke_500.csv
+  image_archive: data/cache/coco_smoke_500.zip
+  runtime_image_root: data/raw/coco
   expected_images: 500
   expected_qa_pairs: 588
   expected_explanations: 830

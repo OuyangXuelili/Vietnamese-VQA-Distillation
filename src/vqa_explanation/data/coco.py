@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import csv
+import hashlib
 import random
+import re
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -10,6 +13,35 @@ from typing import Iterable
 from PIL import Image
 
 COCO_IMAGE_BASE_URL = "https://s3.us-east-1.amazonaws.com/images.cocodataset.org"
+COCO_NAME_PATTERN = re.compile(r"COCO_(train2014|val2014)_\d{12}\.jpg\Z")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_manifest(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8", newline="") as source:
+        reader = csv.DictReader(source)
+        if not reader.fieldnames or not {"image_name", "coco_split"}.issubset(reader.fieldnames):
+            raise ValueError("Manifest must contain image_name and coco_split columns")
+        rows = list(reader)
+    if not rows:
+        raise ValueError("Manifest is empty")
+    names: set[str] = set()
+    for row in rows:
+        name = row["image_name"]
+        match = COCO_NAME_PATTERN.fullmatch(name)
+        if not match or match.group(1) != row["coco_split"]:
+            raise ValueError(f"Invalid COCO image name/split: {name!r}")
+        if name in names:
+            raise ValueError(f"Duplicate image in manifest: {name}")
+        names.add(name)
+    return sorted(rows, key=lambda row: row["image_name"])
 
 
 def select_smoke_images(
