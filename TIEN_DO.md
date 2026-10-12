@@ -18,6 +18,15 @@ Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
 
+## 12/10 — sửa import trong CI trên Linux
+
+- Actions phát hiện `ModuleNotFoundError: scripts` khi gọi executable pytest.
+  CI nay dùng `python -m pytest`; cấu hình pytest thêm gốc repo vào pythonpath
+  để các test import script có cùng cách resolve khi dùng executable hoặc module.
+- Giữ marker historical và fail-on-skip của CI source. Không đổi code train,
+  dữ liệu, checkpoint hoặc giao thức. Log failure và regression ở
+  `artifacts/code_cleanup_20261012`.
+
 ## 12/10 — chốt đối chứng và kiểm cặp nháp
 
 - Protocol mới `vqa_nle_matched_lr_v2`: M2 chính dùng
@@ -45,7 +54,18 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
   hiện khi yêu cầu. Server local 8765 được khởi động lại, chỉ bind 127.0.0.1.
 - Báo cáo pilot vẫn `in_progress`, `training_gate_open=false`. Cần chốt
   quyết định pilot và N cặp hợp lệ; 1.000 hiện chỉ là dự toán, không quota.
-  Bản mới đang local; cập nhật đồng bộ sau khi xác minh Drive.
+- Source `source_20261012_111657_299458` đã ở Drive releases, 230 file;
+  tải lại ZIP khớp SHA-256 `c0040034978a15f6055fedc17e8a63ac5d44e0efb17a10b48b30b8a49abdf187`.
+  Năm tài liệu cập nhật phiên bản cũ: research_plan v10,
+  preference_training v6, preference_annotation v5, experiment_protocol v3,
+  project_description v4. Word không thay đổi.
+- `preference_local/pilot_qc_20261012.zip` và checksum đã tải lên; ZIP có
+  12 entry, không ảnh/weights. Trong thao tác kiểm tải lại, ZIP bị chuyển
+  vào Thùng rác; đã khôi phục đúng file về preference_local. Dùng mục
+  Tải xuống bên trong menu tệp thay vì nút toolbar bị menu che; tải lại
+  khớp `0f9155ebd8b1a62b34610f4eabfd40d9678404a69cab73dfeb3c9446f67eba8b`.
+  Không mất dữ liệu hoặc đụng tệp khác trong Thùng rác. Bản ZIP source
+  giữ nhật ký trước upload; tổng kết này được cập nhật riêng vào file cũ.
 
 ## 12/10 — sửa lỗi review và đối chiếu đồ án sinh viên
 
@@ -139,8 +159,8 @@ cùng bundle đã duyệt; chốt N trước train. Mẫu test và các nhãn pe
   `source_20261012_112049_100436.zip` và checksum, 231 file; UI xác nhận tải
   xong hai mục và đúng tên/kích thước. SHA-256 local:
   `c756564d911dd182bf689f6c11160e071af7414ad6a5ec4fc67c813b5e12b174`.
-  Drive báo không tải được file khi thử tải lại từ danh sách và preview;
-  chưa xác minh round-trip của bản mới. Bản ghim M1 và các pointer lịch sử giữ nguyên.
+  Đã tải lại bằng mục Tải xuống trong menu tệp, SHA-256 khớp local.
+  Bản ghim M1 và các pointer lịch sử giữ nguyên.
 
 ## Đồng bộ đã xác minh trước lượt sửa
 
