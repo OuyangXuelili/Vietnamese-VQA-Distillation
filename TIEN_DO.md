@@ -135,8 +135,12 @@ cùng bundle đã duyệt; chốt N trước train. Mẫu test và các nhãn pe
   Nhóm rule bảo mật Ruff S đã chạy và được ghi theo ngữ cảnh trong
   [docs/code_review.md](docs/code_review.md).
 - Tải lại source Drive ngày 12/10 trong lượt này: hash khớp bản đã ghi.
-  Các file mới đã được kiểm mẫu token trước khi đóng gói; source release mới
-  đang chuẩn bị upload. Bản ghim M1 và mọi checkpoint/output lịch sử giữ nguyên.
+  Các file mới đã được kiểm mẫu token trước khi đóng gói. Drive đã nhận
+  `source_20261012_112049_100436.zip` và checksum, 231 file; UI xác nhận tải
+  xong hai mục và đúng tên/kích thước. SHA-256 local:
+  `c756564d911dd182bf689f6c11160e071af7414ad6a5ec4fc67c813b5e12b174`.
+  Drive báo không tải được file khi thử tải lại từ danh sách và preview;
+  chưa xác minh round-trip của bản mới. Bản ghim M1 và các pointer lịch sử giữ nguyên.
 
 ## Đồng bộ đã xác minh trước lượt sửa
 
@@ -144,12 +148,15 @@ Drive `source/releases` có `source_20261012_040415_495004.zip` và checksum.
 Nhật ký lượt trước ghi đã tải lại ZIP và SHA-256 khớp:
 `341456fe12ef75e0ccf2e7509454a9fbdf7418c5b7fa5c1e74681c7923f1c91a`.
 Đã kiểm trực tiếp tên bản ZIP/checksum trên Drive trong lượt này.
-Source mới sau sửa cần release riêng; bản ghim M1 tiếp tục dùng nguyên bản.
+Source sau sửa đã được upload như ghi ở mục trên; bản ghim M1 tiếp tục dùng nguyên bản.
 
 GitHub đã có `OuyangXuelili/Vietnamese-VQA-Distillation`, chứa dự án cũ.
 Repo local của nhánh VQA Explanation chưa có remote trước lượt này.
-Source hiện hành sẽ được lưu trên nhánh riêng sau kiểm tra; chỉ ghi đã push
-sau khi xác minh commit ở remote.
+Source hiện hành đã push lên nhánh `codex/vqa-explanation`, commit
+`569b6b8103af15b93c528770cf85d0cac08c3fa6`; `git ls-remote` khớp HEAD local.
+Git giữ source/config/test/tài liệu; data đầy đủ, checkpoint và log nằm ngoài Git.
+CI mới đang chạy; kiểm local đã qua. Mỗi lần cập nhật nhật ký sau đóng ZIP
+được đồng bộ riêng, còn snapshot source đã đóng giữ nguyên.
 
 ## Việc tiếp theo
 
