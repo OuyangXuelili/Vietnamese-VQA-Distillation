@@ -18,6 +18,30 @@ Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
 
+## 14/10 — khởi động notebook 04 trên T4
+
+- Mở đúng file Drive `04_train_preferences.ipynb`, ID
+  `1emxS1s8mZHYQxVqR4e4tA8j8G_xrzhl0`, tài khoản lưu dự án. Không tạo
+  notebook mới, không đổi dữ liệu/siêu tham số hoặc chạy lại M1.
+- Colab đã kết nối Python 3/GPU T4, RAM 12,67 GB. Cell 1 đang chờ hộp
+  kết nối Google Drive; các cell source/preflight/gate/train chưa chạy.
+  Đã yêu cầu người dùng hoàn tất xác thực; không tự bấm quyền Drive.
+- Rà launcher phát hiện trường pin decision record đã được ghi nhưng chưa
+  được đối chiếu. Thêm kiểm checksum quyết định và manifest frozen trước
+  đọc stage/model; cùng 186 cặp nhưng khác bundle cũng bị từ chối.
+  34 test launcher qua; kiểm riêng bộ 186 cặp khớp record đã khóa.
+- `check_project.py --full-data` qua Ruff và 925 test, không skip. Audit
+  32.834 dòng và preflight 29.459 train qua; run
+  `audit_20261013_200114_972933`, `preflight_20261013_200149_880093`.
+  Log ở `artifacts/preference_review_complete_20261014/runtime_setup/check_project.log`.
+  26 warning từ fixture PEFT, không phải lỗi train.
+- Source `source_20261013_200507_278622` đã tải lên và tải lại kiểm đủ 238
+  member, SHA-256 `0664c988874b34b4468906aed3c514b57229f75350557d42f1631e32259f7236`.
+  Record launch Drive v11 và `documents/preference_training.md` cũng đã tải
+  lại khớp local. Không đóng lại gói dữ liệu vì bộ 186 cặp không đổi.
+  Readback ở `runtime_setup/readbacks`; 304 file lịch sử khớp hash cũ.
+- M2/M3 chưa train GPU. Bộ cuối, M1 và output lịch sử giữ nguyên.
+
 ## 14/10 — hoàn tất pool và khóa bộ train
 
 - Xử lý 916 ID còn lại theo selection đã lưu trước khi xem: thêm 48 cặp,

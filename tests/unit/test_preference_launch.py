@@ -16,6 +16,82 @@ def record_file(tmp_path, **updates):
     return path
 
 
+@pytest.fixture
+def pinned_lock(tmp_path):
+    frozen = tmp_path / "preferences/frozen"
+    frozen.mkdir(parents=True)
+    manifest = frozen / "manifest.json"
+    manifest.write_text('{"pairs": 186}\n', encoding="utf-8")
+    decision = tmp_path / "preferences/decision_record.json"
+    decision.write_text(json.dumps({
+        "schema": "preference_dataset_decision_v1", "data_locked": True,
+        "pairs": 186, "frozen_manifest_sha256": launch.sha256_file(manifest),
+    }), encoding="utf-8")
+    record = {
+        "expected_pairs": 186, "preference_decision_record": "preferences/decision_record.json",
+        "preference_decision_record_sha256": launch.sha256_file(decision),
+    }
+    return record, tmp_path, frozen, decision
+
+
+def test_pinned_decision_binds_the_exact_frozen_bundle(pinned_lock):
+    record, project, frozen, _ = pinned_lock
+    assert launch.validate_dataset_lock(record, project, frozen) == (
+        record["preference_decision_record_sha256"]
+    )
+
+
+@pytest.mark.parametrize("missing", ["path", "hash"])
+def test_incomplete_decision_pin_is_rejected(pinned_lock, missing):
+    record, project, frozen, _ = pinned_lock
+    field = "preference_decision_record" + ("_sha256" if missing == "hash" else "")
+    record.pop(field)
+    with pytest.raises(ValueError, match="decision path and SHA-256"):
+        launch.validate_dataset_lock(record, project, frozen)
+
+
+def test_changed_decision_is_rejected(pinned_lock):
+    record, project, frozen, decision = pinned_lock
+    decision.write_text("{}\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="decision changed"):
+        launch.validate_dataset_lock(record, project, frozen)
+
+
+@pytest.mark.parametrize("change", [{"pairs": 185}, {"pairs": True},
+                                  {"data_locked": False}, {"schema": "draft"}])
+def test_decision_metadata_must_match_launch(pinned_lock, change):
+    record, project, frozen, decision = pinned_lock
+    value = json.loads(decision.read_text(encoding="utf-8"))
+    value.update(change)
+    decision.write_text(json.dumps(value), encoding="utf-8")
+    record["preference_decision_record_sha256"] = launch.sha256_file(decision)
+    with pytest.raises(ValueError, match="decision differs"):
+        launch.validate_dataset_lock(record, project, frozen)
+
+
+def test_same_size_bundle_substitution_is_rejected(pinned_lock):
+    record, project, frozen, _ = pinned_lock
+    (frozen / "manifest.json").write_text('{"pairs": 186, "changed": true}\n', encoding="utf-8")
+    with pytest.raises(ValueError, match="bundle differs"):
+        launch.validate_dataset_lock(record, project, frozen)
+
+
+def test_changed_lock_stops_before_stage_or_model(pinned_lock, monkeypatch):
+    record, project, frozen, decision = pinned_lock
+    path = record_file(project, **record, data_locked=True,
+                       preferences=str(frozen), m1_adapter="runs/m1/adapter",
+                       m1_selection="reports/selection.json", environment="configs/cloud.yaml",
+                       study_config="configs/study.yaml")
+    decision.write_text("{}\n", encoding="utf-8")
+    monkeypatch.setattr(launch, "prepare_stage", lambda args: pytest.fail("Must not load stage"))
+    with pytest.raises(ValueError, match="decision changed"):
+        launch.prepare_launch(path, project, "m2", "inspect")
+
+
+def test_legacy_record_without_decision_pin_keeps_existing_gates(tmp_path):
+    assert launch.validate_dataset_lock({}, tmp_path, tmp_path / "not_loaded") is None
+
+
 @pytest.mark.parametrize("mode", ["inspect", "gate", "train"])
 def test_partial_dataset_stops_before_stage_or_model(tmp_path, monkeypatch, mode):
     path = record_file(tmp_path)

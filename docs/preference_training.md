@@ -44,6 +44,10 @@ preferences, M1/selection, hai config và `run_group`. Bộ cuối đã đặt
 `data_locked=true`, `expected_pairs=186`; hai config khớp N. Record dành
 cho Drive trỏ `preference_local/vivqax_m1_3683_v1/frozen`. Local vẫn dùng đường dẫn
 repo và profile local riêng, không mount Drive.
+Launcher đối chiếu checksum của decision record rồi đối chiếu manifest
+frozen với quyết định đó trước khi tải model. Thay bộ cặp dù cùng N cũng
+bị từ chối. Record cũ không có hai trường pin giữ các kiểm metadata/gate cũ;
+record chính hiện hành có đầy đủ hai trường.
 Runtime mới khôi phục bundle ảnh vào ổ `/content` bằng verifier hiện có;
 record ghim đường dẫn/hash bundle. Ảnh của bộ cặp tiếp tục được đối chiếu
 trong preflight. Không đọc hàng nghìn JPEG trực tiếp từ Drive.

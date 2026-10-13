@@ -8,6 +8,32 @@ from pathlib import Path
 
 from vqa_explanation.training.preference_data import prepare_stage
 from vqa_explanation.utils.environment import project_root
+from vqa_explanation.utils.run_provenance import sha256_file
+
+
+def validate_dataset_lock(record, project_dir, preferences):
+    """Bind the supplied bundle to the pinned curation decision."""
+    path_value = record.get("preference_decision_record")
+    digest = record.get("preference_decision_record_sha256")
+    if path_value is None and digest is None:
+        return None
+    if (not isinstance(path_value, str) or not path_value.strip()
+            or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)):
+        raise ValueError("Dataset lock requires a decision path and SHA-256")
+    path = Path(path_value)
+    if not path.is_absolute():
+        path = Path(project_dir) / path
+    if sha256_file(path) != digest:
+        raise ValueError("Pinned preference decision changed")
+    decision = json.loads(path.read_text(encoding="utf-8"))
+    if (decision.get("schema") != "preference_dataset_decision_v1"
+            or decision.get("data_locked") is not True
+            or type(decision.get("pairs")) is not int
+            or decision["pairs"] != record["expected_pairs"]):
+        raise ValueError("Preference decision differs from the locked launch")
+    if sha256_file(Path(preferences) / "manifest.json") != decision.get("frozen_manifest_sha256"):
+        raise ValueError("Preference bundle differs from the pinned decision")
+    return digest
 
 
 def load_launch(path, project_dir):
@@ -45,6 +71,7 @@ def prepare_launch(launch_path, project_dir, arm, mode,
     if paths is None:
         return {"status": "blocked", "reason": "Preference dataset and final N are not locked",
                 "main_training_started": False}, None
+    decision_hash = validate_dataset_lock(record, project_dir, paths["preferences"])
     config_key = "m2_config" if arm == "m2" else "m3_config"
     relative = record.get(config_key)
     if not isinstance(relative, str) or not relative.strip():
@@ -63,7 +90,8 @@ def prepare_launch(launch_path, project_dir, arm, mode,
         raise ValueError("Training requires a new explicit output directory")
     if mode == "train" and gpu_gate is None:
         raise ValueError("Main training requires the matching GPU gate")
-    return {"status": "metadata_passed", "plan": plan, "gpu_training_verified": False}, args
+    return {"status": "metadata_passed", "plan": plan, "gpu_training_verified": False,
+            "preference_decision_sha256": decision_hash}, args
 
 
 def stage_output(run_folder, arm, mode, attempt="initial"):
