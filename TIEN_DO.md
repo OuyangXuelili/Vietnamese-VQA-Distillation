@@ -1,6 +1,6 @@
 # Tiến độ dự án
 
-Cập nhật: 13/10/2026.
+Cập nhật: 14/10/2026.
 
 ## Trạng thái hiện hành
 
@@ -9,7 +9,7 @@ Cập nhật: 13/10/2026.
 | Dữ liệu | ViVQA-X `image_disjoint_v1`, 29.459 train / 1.407 validation / 1.968 test; 28.180 ảnh đã kiểm local và bundle cloud |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
 | Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
-| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 750 ảnh, giữ 110 cặp; tách 34 câu theo phạm vi. Full notes: 110 giữ / 392 loại / 282 chưa chắc / 1.216 pending |
+| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 1.050 ảnh, giữ 153 cặp; tách 34 câu theo phạm vi. Full notes: 153 giữ / 522 loại / 409 chưa chắc / 916 pending |
 | M2/M3 | Trainer/resume đã kiểm local; có CLI bàn giao review → freeze; chưa train GPU |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
@@ -17,6 +17,41 @@ Cập nhật: 13/10/2026.
 Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
+
+## 14/10 — duyệt liền 300 ảnh, lượt 751–1.050
+
+- Hoàn thành ba nhóm 100 ID theo continuation đã khóa; xem đủ ảnh qua
+  bảng ảnh, mở lại ảnh gốc của 43 cặp giữ. Không sinh thêm ứng viên.
+- Kết quả từng nhóm: 16/45/39, 15/41/44 và 12/44/44 (giữ/loại/chưa chắc).
+  Thêm 13 rejected M1 nguyên văn và 30 đối chứng có kiểm soát. Đối chứng
+  không được tính thành lỗi gốc của M1; thiếu liên quan ghi riêng với bịa chi tiết.
+- Hai nháp đối chứng cuối được rút về một thuộc tính trước công bố.
+  Bản đầu vẫn ở `artifacts/preference_review_1050_20261014/initial_publish`.
+  Không đổi nhãn trước lượt, pilot, M1, split, LR, epoch hoặc output notebook.
+- Bản hiện hành `data/preferences/review_batch_951_1050_20261014`:
+  153 cặp cùng ID/chosen cho M2/M3, 61 model / 92 synthetic. Còn 916 pending;
+  100 ID tiếp khóa trong continuation. M2/M3 chưa train GPU, N chưa chốt.
+- Trang `review_results_1050_20261014.html`. Kiểm toàn repo, đóng gói và
+  đồng bộ sau cả 300 ảnh. Không tạo thêm notebook hoặc sửa output train cũ.
+- `check_project.py --full-data` qua Ruff và 910 test không skip. Audit
+  32.834 dòng, không trùng ảnh giữa split; preflight đủ 29.459 train.
+  Run `audit_20261013_173154_212649`, `preflight_20261013_173226_965140`
+  đặt theo UTC. Log và kết quả rà ở `artifacts/preference_review_1050_20261014`.
+  26 warning PEFT từ fixture; 304 file lịch sử không đổi hash, không đổi
+  nhãn ngoài 300 ID. M2/M3 cùng 153 ID/chosen, 153 ảnh không trùng.
+- Drive nhận gói nhãn 70 file, notes v8 và handoff md/json v9. Tải lại ZIP
+  và notes khớp local; SHA-256 ZIP
+  `edfbb1e40f0d39d6ee33b766793e081579686663b494a38f18b83819b39dfd9f`.
+- Source 238 file `source_20261013_173643_954254` đã tải lại từ Drive khớp
+  SHA-256 `43c379292db35863b44cc276275c3dd751950ea59662d1528818aa53485820a6`.
+  Không có ảnh/weights trong source ZIP. Nhật ký hiện hành đồng bộ riêng
+  sau snapshot source, không tạo thêm release chỉ để sửa trạng thái upload.
+- Tài liệu giữ cùng file: research_plan v23, preference_annotation v16,
+  preference_training v17, project_description v10. Kế hoạch tải lại khớp.
+  Record launch v9 ghim source mới, tải lại khớp, vẫn `data_locked=false`.
+  Inspect M2/M3 dừng trước tải model vì N/bộ cuối chưa khóa.
+- Bằng chứng tải lại, bộ lọc trang và Git cuối lưu ở
+  `artifacts/preference_review_1050_20261014/sync/receipt.json`.
 
 ## 13/10 — duyệt lượt 651–750
 
