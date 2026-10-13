@@ -7,25 +7,9 @@ import json
 from pathlib import Path
 
 from vqa_explanation.data.io import read_jsonl, write_json
+from vqa_explanation.preference.handoff import verify_pilot_sources
 from vqa_explanation.preference.pilot_report import render_pilot_markdown, summarize_pilot
 from vqa_explanation.utils.run_provenance import sha256_file
-
-
-def _verify_pilot_sources(review_dir: Path, pilot: dict) -> dict[str, str]:
-    sources = {
-        "source_inputs_sha256": review_dir / "inputs.jsonl",
-        "source_candidates_sha256": review_dir / "candidates.jsonl",
-        "source_notes_sha256": review_dir / "review_notes.jsonl",
-    }
-    hashes = {}
-    for key, path in sources.items():
-        if not path.is_file():
-            raise FileNotFoundError(f"Missing frozen review source: {path}")
-        digest = sha256_file(path)
-        if pilot.get(key) != digest:
-            raise ValueError(f"Pilot source hash mismatch for {key}")
-        hashes[key] = digest
-    return hashes
 
 
 def main() -> None:
@@ -48,7 +32,7 @@ def main() -> None:
     pilot_ids = pilot.get("question_ids")
     if not isinstance(pilot_ids, list) or not pilot_ids:
         raise ValueError("Pilot manifest is missing question IDs")
-    source_hashes = _verify_pilot_sources(args.review_dir, pilot)
+    source_hashes = verify_pilot_sources(args.review_dir, pilot)
 
     baseline_path = args.review_dir / "review_notes.jsonl"
     baseline = list(read_jsonl(baseline_path))

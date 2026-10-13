@@ -1,9 +1,10 @@
-# Main M2 arm; same learning rate as M3, amended before either GPU run.
+# New stage; do not pass this config to the M1 resume runner.
+# Earlier 2e-5 plan, not trained; excluded from the main matched-LR comparison.
 stage: sft_chosen
 experiment_id: M2_SFT_CHOSEN
 seed: 42
 expected_pairs: 1000
-learning_rate: 0.000005
+learning_rate: 0.00002
 num_train_epochs: 1
 per_device_train_batch_size: 1
 gradient_accumulation_steps: 8

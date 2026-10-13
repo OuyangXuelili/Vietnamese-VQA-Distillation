@@ -38,13 +38,18 @@ baseline:
   diagnostic_review_images: 100
   diagnostic_review_status: pending_parallel
 preferences:
+  review_policy: ai_visual_review_v1
+  review_actor: ai
+  human_verified: false
+  pilot_finalization: data/preferences/pilot_ai_20261012/decision_record.json
+  review_continuation: data/preferences/review_batch_151_250_20261013/continuation.json
   question_pool_limit: 2000
   target_accepted_pairs: 1000
   first_pass_candidates_per_question: 1
   maximum_generated_candidates: 4000
   source_split: train
 training:
-  m2_config: configs/training/sft_chosen_matched_lr.yaml
+  m2_config: configs/training/sft_chosen.yaml
   m3_config: configs/training/dpo.yaml
   epochs_per_branch: 1
   effective_batch: 8

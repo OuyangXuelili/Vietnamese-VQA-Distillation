@@ -1,7 +1,9 @@
 # Huấn luyện M2/M3
 
-M1-3683 đã được chọn và có đủ prediction validation. M2/M3 còn chờ bộ cặp
-được người thực hiện xác nhận, chốt N và đóng băng. Trạng thái tại
+M1-3683 đã được chọn và có đủ prediction validation. Pilot đã chốt; bộ cặp
+đang mở rộng có 31 cặp, chưa đủ để mở run chính. Cần chốt N và đóng băng
+bộ cuối. Dữ liệu duyệt bằng AI giữ actor rõ trong metadata, không ghi
+thành nhãn người. Trạng thái tại
 [TIEN_DO.md](../TIEN_DO.md); cách duyệt/export ở
 [preference_annotation.md](preference_annotation.md).
 
@@ -22,12 +24,37 @@ Chốt `expected_pairs=N` cho các config sẽ chạy. Hai nhánh dùng cùng ID
 ảnh, đáp án và chosen. Sau preflight CPU, mỗi trainer chạy gate GPU tối đa
 10 update, rồi run chính nạp lại M1 sạch.
 
+`scripts/finalize_preference_review.py` bàn giao bản duyệt bằng một lệnh:
+audit/báo cáo trước, export/freeze chỉ khi có `--freeze` và N chính xác.
+Đọc `handoff.md`, kiểm manifest và dùng thư mục `frozen` làm preferences.
+Lệnh không cập nhật config, chọn N hoặc chạy GPU thay người thực hiện.
+
 ## Trainer và môi trường mới
 
 Logic ở `training/preference.py`, input/collator ở `training/preference_data.py`.
-Một CLI `scripts/train_preference.py` đọc hai config; không tạo notebook mới.
+CLI `scripts/train_preference.py` đọc config và chạy trainer.
 
-M2 chính dùng `configs/training/sft_chosen_matched_lr.yaml`; M3 dùng
+Notebook `04_train_preferences.ipynb` có 7 cell: kho lưu, source, preflight,
+M2, M3, kết quả và một phần mô tả ngắn. `scripts/launch_preference_training.py` chuyển
+record khởi chạy thành tham số CLI trên; không chứa loss hoặc trainer mới.
+Hai cell M2/M3 gọi cùng helper, tránh chép lại phần dựng lệnh.
+
+Record `source/preference_training_launch_v1.json` giữ đường dẫn môi trường,
+preferences, M1/selection, hai config và `run_group`. Mặc định chưa khóa
+dữ liệu; 31 cặp hiện tại không mở train chính. Chỉ đặt `data_locked=true`
+sau khi chốt N/bộ cuối và cập nhật hai config khớp N.
+Runtime mới khôi phục bundle ảnh vào ổ `/content` bằng verifier hiện có;
+record ghim đường dẫn/hash bundle. Ảnh của bộ cặp tiếp tục được đối chiếu
+trong preflight. Không đọc hàng nghìn JPEG trực tiếp từ Drive.
+
+Trong notebook: `MODE='inspect'` chỉ kiểm metadata; `'gate'` chạy 5 update;
+`'train'` cần kết quả gate cùng nhánh. Run group không đổi khi chạy lại
+cell cấu hình, nên bước train đọc đúng gate đã lưu. Chọn nhóm run mới khi
+đổi source/dữ liệu, không ghi đè output cũ. Resume truyền checkpoint qua
+`RESUME`, đặt `ATTEMPT` của nhánh đó thành tên mới (ví dụ `resume25`).
+Output mới nằm cùng nhóm run; gate gốc vẫn được dùng. Không lặp setup M1.
+
+M2 chính dùng `configs/training/sft_chosen.yaml`; M3 dùng
 `configs/training/dpo.yaml`, cùng LR 5e-6. Bản M2 2e-5 giữ làm thiết kế cũ,
 chưa train. Protocol sửa ngày 12/10 trước run để tránh nhiễu do khác LR.
 CLI mặc định đọc `study_budget_v2.yaml`, kiểm hai nhánh và lưu hash trong
@@ -37,7 +64,7 @@ study mới qua `--study-config`, không đổi protocol sau khi thấy test.
 Kiểm cấu hình, không cần GPU/dữ liệu:
 
 ```powershell
-python scripts/train_preference.py --config configs/training/sft_chosen_matched_lr.yaml --check-comparison
+python scripts/train_preference.py --config configs/training/sft_chosen.yaml --check-comparison
 ```
 
 Sau khi chốt N, cập nhật `expected_pairs` ở hai config chính rồi kiểm lại.

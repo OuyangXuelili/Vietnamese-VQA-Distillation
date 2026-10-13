@@ -1,0 +1,95 @@
+"""Translate a declared cloud launch into the existing preference-stage CLI."""
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+from vqa_explanation.training.preference_data import prepare_stage
+from vqa_explanation.utils.environment import project_root
+
+
+def load_launch(path, project_dir):
+    record = json.loads(path.read_text(encoding="utf-8"))
+    if (record.get("schema") != "preference_training_launch_v1"
+            or record.get("scope") != "main_preference_experiment"):
+        raise ValueError("Use a main preference launch record, not an abandoned pilot")
+    if record.get("data_locked") is not True:
+        return record, None
+    if type(record.get("expected_pairs")) is not int or record["expected_pairs"] <= 0:
+        raise ValueError("Locked launch requires an explicit positive pair count")
+    paths = {}
+    for key in ("preferences", "m1_adapter", "m1_selection"):
+        value = record.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Launch needs {key}")
+        path_value = Path(value)
+        paths[key] = path_value if path_value.is_absolute() else project_dir / path_value
+    for key in ("environment", "study_config"):
+        value = record.get(key)
+        if not isinstance(value, str) or not value.strip():
+            raise ValueError(f"Launch needs {key}")
+        path_value = Path(value)
+        paths[key] = path_value if path_value.is_absolute() else project_root() / path_value
+    return record, paths
+
+
+def prepare_launch(launch_path, project_dir, arm, mode,
+                   output_dir=None, gpu_gate=None, resume=None):
+    if arm not in {"m2", "m3"} or mode not in {"inspect", "gate", "train"}:
+        raise ValueError("Unknown preference arm or execution mode")
+    if mode == "inspect" and resume is not None:
+        raise ValueError("Resume requires a training mode")
+    record, paths = load_launch(launch_path, project_dir)
+    if paths is None:
+        return {"status": "blocked", "reason": "Preference dataset and final N are not locked",
+                "main_training_started": False}, None
+    config_key = "m2_config" if arm == "m2" else "m3_config"
+    relative = record.get(config_key)
+    if not isinstance(relative, str) or not relative.strip():
+        raise ValueError(f"Launch needs {config_key}")
+    args = argparse.Namespace(
+        **paths, config=project_root() / relative,
+        model_config=project_root() / "configs/model/qwen25_vl_3b.yaml",
+        output_dir=output_dir, preflight_only=mode == "inspect",
+        pilot_steps=5 if mode == "gate" else 0,
+        gpu_gate=gpu_gate, resume_from_checkpoint=resume, stop_after_step=None,
+    )
+    plan = prepare_stage(args)[2]
+    if plan["pairs"] != record["expected_pairs"]:
+        raise ValueError("Launch N differs from both config and frozen dataset")
+    if mode != "inspect" and output_dir is None:
+        raise ValueError("Training requires a new explicit output directory")
+    if mode == "train" and gpu_gate is None:
+        raise ValueError("Main training requires the matching GPU gate")
+    return {"status": "metadata_passed", "plan": plan, "gpu_training_verified": False}, args
+
+
+def stage_output(run_folder, arm, mode, attempt="initial"):
+    """Separate resumed output from the original run and its GPU gate."""
+    if arm not in {"m2", "m3"} or mode not in {"inspect", "gate", "train"}:
+        raise ValueError("Unknown preference arm or execution mode")
+    if not re.fullmatch(r"[a-zA-Z0-9][a-zA-Z0-9_-]{0,63}", attempt):
+        raise ValueError("Use a short attempt label without path separators")
+    if attempt != "initial" and mode != "train":
+        raise ValueError("Attempt labels apply only to main training")
+    suffix = "" if attempt == "initial" else f"_{attempt}"
+    return run_folder / f"{arm}_{mode}{suffix}"
+
+
+def launch_command(repo, record, project_dir, arm, mode, run_folder,
+                   resume=None, attempt="initial"):
+    """Keep notebook cells limited to one explicit arm invocation."""
+    output = stage_output(run_folder, arm, mode, attempt)
+    if resume is not None and (mode != "train" or attempt == "initial"):
+        raise ValueError("Resume requires train mode and a new attempt label")
+    command = [sys.executable, str(repo / "scripts/launch_preference_training.py"),
+               "--launch-record", str(record), "--project-dir", str(project_dir),
+               "--arm", arm, "--mode", mode,
+               "--output-dir", str(output)]
+    if mode == "train":
+        command += ["--gpu-gate", str(run_folder / f"{arm}_gate/training_result.json")]
+    if resume is not None:
+        command += ["--resume-from-checkpoint", str(resume)]
+    return command

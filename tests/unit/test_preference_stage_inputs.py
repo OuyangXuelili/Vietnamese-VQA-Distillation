@@ -198,7 +198,7 @@ def test_data_plan_binds_both_declared_arm_configs(stage_inputs):
 
     root = stage_inputs.preferences.parent
     sft_cfg = yaml.safe_load(
-        Path("configs/training/sft_chosen_matched_lr.yaml").read_text(encoding="utf-8")
+        Path("configs/training/sft_chosen.yaml").read_text(encoding="utf-8")
     )
     sft_cfg["expected_pairs"] = 1
     sft_path = root / "sft.yaml"

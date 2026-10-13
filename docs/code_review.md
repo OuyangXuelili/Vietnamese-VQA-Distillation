@@ -1,9 +1,7 @@
-# Review thay đổi trong dự án
+# Review code
 
-Code do người hoặc AI hỗ trợ viết đều cần kiểm theo cùng tiêu chí: thực hiện
-đúng yêu cầu, có bằng chứng chạy và đủ rõ để người khác tiếp tục. Với repo
-VQA NLE, ưu tiên dữ liệu/split, completion masking, reference DPO, resume và
-cách chấm kết quả; số file hoặc số test chỉ mô tả quy mô kiểm tra.
+Kiểm dữ liệu/split, completion masking, reference DPO, resume và cách chấm
+kết quả. Đọc diff, chạy test liên quan và đối chiếu output trước khi đồng bộ.
 
 ## Luồng review
 
@@ -26,14 +24,9 @@ cách chấm kết quả; số file hoặc số test chỉ mô tả quy mô ki�
 | Git diff và review nhánh/PR | Scope, lịch sử thay đổi, API, cấu trúc và giải thích quyết định |
 | Ruff | Lỗi Python, import, các mẫu code dễ sai; nhóm S hỗ trợ rà bảo mật |
 | pytest và CI | Hành vi, regression và khả năng chạy trên môi trường sạch |
-| CodeQL hoặc Semgrep | Những mẫu và luồng dữ liệu có thể gây lỗi bảo mật |
-| pip-audit | Lỗ hổng đã công bố trong dependency Python |
-| Secret scanning | Token/API key lỡ đưa vào source hoặc lịch sử Git |
 
 Ruff và pytest/CI đã tích hợp trong repo. CI CPU dùng Python 3.10/3.11,
 dependency verification/demo và Node, với `--fail-on-skip`.
-Các công cụ còn lại có thể bổ sung theo nhu cầu; chúng chưa được coi là đã
-chạy chỉ vì có tên trong bảng này.
 
 Lượt 12/10 đã chạy Ruff nhóm S trên `src/` và `scripts/`; báo cáo tại
 `artifacts/code_cleanup_20261012/ruff_security.json`. Cảnh báo RNG áp dụng
@@ -41,15 +34,27 @@ cho seed lấy mẫu/bootstrap, subprocess dùng danh sách argv không qua shel
 và URL COCO được tạo từ base HTTPS cố định. Kết quả scanner cần review các
 luồng tương ứng; tránh sửa RNG hoặc giao thức thí nghiệm chỉ để hết cảnh báo.
 
-AI review có thể giúp tìm chỗ đáng nghi hoặc giải thích diff. Người thực hiện
-đối chiếu từng nhận xét với dòng code, test và input thực tế trước khi sửa.
-Các test chỉ tìm chuỗi trong source cần được bổ sung hành vi nếu chúng đang
-bảo vệ một chức năng quan trọng.
+Đối chiếu nhận xét với code và input thực tế trước khi sửa. Test chức năng
+cần kiểm hành vi; tìm chuỗi trong source chỉ dùng để kiểm cấu trúc.
+
+## Tên file
+
+- Python và YAML dùng `snake_case`; tên mô tả nhiệm vụ hoặc thuật toán.
+  Ví dụ: `audit_dataset.py`, `answer_metrics.py`, `sft_chosen.yaml`.
+- Script là lệnh: `train_`, `evaluate_`, `prepare_`, `export_`, `package_`.
+  `launch_preference_training.py` đọc record; `train_preference.py` chạy trainer.
+- Notebook dùng `<stage>_<task>.ipynb`. M1 có output giữ trong `archive/`;
+  `04_train_preferences.ipynb` dành cho M2/M3.
+- Config đang dùng có tên ổn định. Thiết kế cũ đưa vào `configs/archive/`.
+  Ngày/phiên bản dùng cho snapshot, run và protocol cần truy vết.
+- Tên test theo phần được kiểm: `test_m1_notebook_history.py` kiểm lịch sử
+  M1; `test_preference_notebook.py` kiểm notebook huấn luyện tiếp.
+
+Đổi tên phải cập nhật CLI, import, config, tài liệu và test cùng lượt.
+Run, release và notebook đã chạy giữ đường dẫn/nội dung gốc.
+Git giữ source text dùng LF; notebook giữ nguyên byte để đối chiếu hash.
 
 ## Tài liệu công cụ
 
 - [Ruff linter](https://docs.astral.sh/ruff/linter/)
-- [CodeQL trên GitHub](https://docs.github.com/en/code-security/concepts/code-scanning/codeql/codeql-code-scanning)
-- [Semgrep CLI](https://docs.semgrep.dev/running-rules)
-- [pip-audit](https://pypi.org/project/pip-audit/)
-- [GitHub secret scanning](https://docs.github.com/en/code-security/concepts/secret-security/secret-scanning)
+- [pytest](https://docs.pytest.org/en/stable/)

@@ -76,6 +76,54 @@ def test_verified_notes_produce_identical_answer_and_explicit_origin(review_case
     assert pairs[0]["chosen"].splitlines()[0] == pairs[0]["rejected"].splitlines()[0]
 
 
+def ai_accepted(notes):
+    rows = accepted(notes)
+    rows[0].update(
+        reviewer="codex-visual-review", reviewer_type="ai",
+        chosen_origin_kind="synthetic", chosen_origin_source="recipe.json:q1",
+        chosen_recipe_sha256="d" * 64,
+    )
+    return rows
+
+
+def test_ai_review_does_not_claim_human_verification(review_case):
+    notes, *other = review_case
+    pair = convert_notes(ai_accepted(notes), *other)[0]
+    assert pair["generation_method"] == "ai_review_candidate"
+    assert pair["reviewer_type"] == "ai" and pair["human_verified"] is False
+    assert pair["provenance"]["chosen"]["kind"] == "synthetic"
+    assert pair["provenance"]["rejected"]["kind"] == "model"
+    assert pair["provenance"]["original_candidate_answer"] == "cat"
+
+
+@pytest.mark.parametrize("kind", [None, "manual"])
+def test_ai_written_chosen_cannot_claim_human_authorship(review_case, kind):
+    notes, *other = review_case
+    rows = ai_accepted(notes)
+    rows[0].update(chosen_origin_kind=kind, chosen_recipe_sha256=None)
+    with pytest.raises(ValueError, match="AI-written chosen"):
+        convert_notes(rows, *other)
+
+
+def test_ai_edited_negative_requires_synthetic_origin(review_case):
+    notes, *other = review_case
+    rows = ai_accepted(notes)
+    rows[0].update(proposed_rejected_explanation="Large wings.", rejected_origin_kind="manual")
+    with pytest.raises(ValueError, match="AI-written rejected"):
+        convert_notes(rows, *other)
+
+
+@pytest.mark.parametrize("actor", ["anonymous", True, [], {}])
+def test_invalid_review_actor_is_rejected_by_audit_and_export(review_case, actor):
+    notes, *other = review_case
+    rows = ai_accepted(notes)
+    rows[0]["reviewer_type"] = actor
+    audit = audit_review_notes(rows, notes)
+    assert audit["status"] == "failed"
+    with pytest.raises(ValueError, match="reviewer_type"):
+        convert_notes(rows, *other)
+
+
 def test_edited_negative_is_not_misrepresented_as_raw_model_output(review_case):
     notes, *other = review_case
     notes = accepted(notes)
@@ -282,9 +330,9 @@ assert.equal(details.tag,'details');
 assert.equal(details.id,'review-provenance');
 assert.equal(details.open,false);
 assert.equal(details.children[0].tag,'summary');
-assert.equal(containers.size,17);
+assert.equal(containers.size,18);
 const core=reviewSections.flatMap(section=>section.fields);
-assert.equal(new Set([...core,...technicalFields]).size,17);
+assert.equal(new Set([...core,...technicalFields]).size,18);
 for (const key of technicalFields) assert.equal(containers.get(key),details.children[2]);
 for (const key of core) assert.notEqual(containers.get(key),details.children[2]);
 """

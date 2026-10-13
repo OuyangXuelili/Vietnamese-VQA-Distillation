@@ -22,6 +22,8 @@ from scripts.resume_pinned_m1 import (
     verify_source,
 )
 
+M1_NOTEBOOK = "notebooks/archive/03_m1_and_preference_before_reorganization_20261013.ipynb"
+
 
 def cell_source(notebook, cell_id):
     cell = next(cell for cell in notebook["cells"] if cell["id"] == cell_id)
@@ -583,7 +585,7 @@ def test_duplicate_followup_is_read_only(tmp_path):
 def test_notebook_pins_launcher_and_stop():
     root = Path(__file__).resolve().parents[1]
     notebook = json.loads(
-        (root / "notebooks/03_portable_runner.ipynb").read_text(encoding="utf-8")
+        (root / M1_NOTEBOOK).read_text(encoding="utf-8")
     )
     cell = cell_source(notebook, "xGYhAgj9ltcL")
     # Preserve the historical 1200-step launcher.
@@ -605,7 +607,7 @@ def test_notebook_pins_launcher_and_stop():
 
 def test_resume_cell_does_not_create_training_without_gpu(notebook_checkpoint_1100):
     root = Path(__file__).resolve().parents[1]
-    notebook = json.loads((root / "notebooks/03_portable_runner.ipynb").read_text("utf-8"))
+    notebook = json.loads((root / M1_NOTEBOOK).read_text("utf-8"))
     source = cell_source(notebook, "xGYhAgj9ltcL")
     launcher_bytes = (root / "scripts/resume_pinned_m1.py").read_bytes()
     digest = hashlib.sha256(launcher_bytes).hexdigest()
@@ -638,7 +640,7 @@ def test_resume_cell_does_not_create_training_without_gpu(notebook_checkpoint_11
 
 def test_resume_cell_preserves_input_checkpoint(notebook_checkpoint_1100):
     root = Path(__file__).resolve().parents[1]
-    notebook = json.loads((root / "notebooks/03_portable_runner.ipynb").read_text("utf-8"))
+    notebook = json.loads((root / M1_NOTEBOOK).read_text("utf-8"))
     source = cell_source(notebook, "xGYhAgj9ltcL")
     launcher_bytes = (root / "scripts/resume_pinned_m1.py").read_bytes()
     digest = hashlib.sha256(launcher_bytes).hexdigest()
@@ -695,7 +697,7 @@ def test_resume_cell_preserves_input_checkpoint(notebook_checkpoint_1100):
 def test_epoch_cell_checks_saved_checkpoint_and_recovery_guard_before_training(tmp_path, fault):
     root = Path(__file__).resolve().parents[1]
     notebook = json.loads(
-        (root / "notebooks/03_portable_runner.ipynb").read_text(encoding="utf-8")
+        (root / M1_NOTEBOOK).read_text(encoding="utf-8")
     )
     source = cell_source(notebook, "portable-m1")
     run = tmp_path / "runs/m1/sft-full_20261006_132346_065189"
@@ -773,7 +775,7 @@ def test_epoch_cell_checks_saved_checkpoint_and_recovery_guard_before_training(t
 def test_saved_preflight_is_reused_without_rescanning(tmp_path, missing):
     root = Path(__file__).resolve().parents[1]
     notebook = json.loads(
-        (root / "notebooks/03_portable_runner.ipynb").read_text(encoding="utf-8")
+        (root / M1_NOTEBOOK).read_text(encoding="utf-8")
     )
     source = cell_source(notebook, "portable-token-full")
     source = source.split("RUN_ROOT.mkdir", 1)[0]

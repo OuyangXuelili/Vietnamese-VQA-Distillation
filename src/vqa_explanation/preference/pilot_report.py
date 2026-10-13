@@ -6,7 +6,7 @@ import math
 from collections import Counter
 
 from vqa_explanation.preference.audit import audit_review_notes
-from vqa_explanation.preference.schema import AI_TRIAGE_VERDICTS
+from vqa_explanation.preference.schema import AI_TRIAGE_VERDICTS, reviewer_type
 
 
 def wilson_interval(successes: int, total: int, z: float = 1.959963984540054) -> list[float] | None:
@@ -71,6 +71,13 @@ def summarize_pilot(
         for row in pilot_rows
         if row.get("review_status") != "pending" and isinstance(row.get("reviewer"), str)
     )
+    actor_counts = Counter()
+    for row in pilot_rows:
+        if row.get("review_status") != "pending":
+            try:
+                actor_counts[reviewer_type(row)] += 1
+            except ValueError:
+                pass  # The audit already reports invalid actor types.
     accepted_rows = [row for row in pilot_rows if row.get("review_status") == "accepted"]
     error_types = Counter(row.get("error_type") for row in accepted_rows if row.get("error_type"))
     support_scores = Counter(
@@ -126,9 +133,11 @@ def summarize_pilot(
         else:
             triage_by_id[qid] = verdict
     contingency: dict[str, Counter] = {}
-    for row in [] if triage_errors else pilot_rows:
+    for row in [] if triage_errors or audit["status"] != "passed" else pilot_rows:
         verdict = triage_by_id.get(row.get("source_question_id"))
         if verdict is None or row.get("review_status") == "pending":
+            continue
+        if reviewer_type(row) != "human":
             continue
         contingency.setdefault(verdict, Counter())[row["review_status"]] += 1
 
@@ -157,6 +166,7 @@ def summarize_pilot(
             "resolved": resolved,
             "decisions": dict(sorted(decisions.items())),
             "reviewers": dict(sorted(reviewers.items())),
+            "reviewer_types": dict(sorted(actor_counts.items())),
             "accepted_error_types": dict(sorted(error_types.items())),
             "accepted_support_scores": dict(sorted(support_scores.items())),
             "accepted_rejected_origins": dict(sorted(rejected_origins.items())),
@@ -218,6 +228,10 @@ def render_pilot_markdown(report: dict) -> str:
             f"{decisions.get('accepted', 0)} | {decisions.get('rejected', 0)} | "
             f"{decisions.get('uncertain', 0)} | {decisions.get('pending', 0)} |"
         ),
+        "",
+        "Nguồn quyết định: " + ", ".join(
+            f"{actor}: {count}" for actor, count in pilot.get("reviewer_types", {}).items()
+        ) + ". Nhãn AI không phải xác nhận bởi người.",
         "",
     ]
     acceptance = report.get("acceptance")

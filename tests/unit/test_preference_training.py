@@ -22,8 +22,8 @@ def test_stage_configs_match_protocol(name):
 
 
 def test_main_matched_lr_preserves_the_earlier_sft_plan_except_lr():
-    earlier = load_config("configs/training/sft_chosen.yaml")
-    matched = load_config("configs/training/sft_chosen_matched_lr.yaml")
+    earlier = load_config("configs/archive/sft_chosen_lr2e5.yaml")
+    matched = load_config("configs/training/sft_chosen.yaml")
     dpo = load_config("configs/training/dpo.yaml")
     assert earlier.keys() == matched.keys()
     assert {key for key in earlier if earlier[key] != matched[key]} == {"learning_rate"}
@@ -45,7 +45,7 @@ def test_declared_main_comparison_and_experiment_point_to_matched_sft():
     assert m2["config_sha256"] == m3["config_sha256"]
     assert m2["matched_fields"]["learning_rate"] == 0.000005
     with pytest.raises(ValueError, match="not the declared m2"):
-        validate_study_arm("configs/training/sft_chosen.yaml", study_path)
+        validate_study_arm("configs/archive/sft_chosen_lr2e5.yaml", study_path)
 
 
 @pytest.mark.parametrize("field,value", [
@@ -59,7 +59,7 @@ def test_comparison_rejects_unmatched_arms_before_data_or_model_load(tmp_path, f
 
     sft = tmp_path / "sft.yaml"
     dpo = tmp_path / "dpo.yaml"
-    sft.write_text(Path("configs/training/sft_chosen_matched_lr.yaml").read_text(encoding="utf-8"))
+    sft.write_text(Path("configs/training/sft_chosen.yaml").read_text(encoding="utf-8"))
     changed = load_config("configs/training/dpo.yaml")
     changed[field] = value
     dpo.write_text(yaml.safe_dump(changed), encoding="utf-8")
@@ -92,7 +92,7 @@ def test_comparison_rejects_study_declarations_different_from_configs(tmp_path, 
     path = tmp_path / "study.yaml"
     path.write_text(yaml.safe_dump(study), encoding="utf-8")
     with pytest.raises(ValueError, match="Config differs from study"):
-        validate_study_arm("configs/training/sft_chosen_matched_lr.yaml", path)
+        validate_study_arm("configs/training/sft_chosen.yaml", path)
 
 
 def test_comparison_cli_needs_no_dataset_or_gpu():
@@ -101,13 +101,13 @@ def test_comparison_cli_needs_no_dataset_or_gpu():
 
     result = subprocess.run([
         sys.executable, "scripts/train_preference.py",
-        "--config", "configs/training/sft_chosen_matched_lr.yaml", "--check-comparison",
+        "--config", "configs/training/sft_chosen.yaml", "--check-comparison",
     ], capture_output=True, text=True, check=False)
     assert result.returncode == 0, result.stderr
     assert json.loads(result.stdout)["arm"] == "m2"
     result = subprocess.run([
         sys.executable, "scripts/train_preference.py",
-        "--config", "configs/training/sft_chosen.yaml", "--preflight-only",
+        "--config", "configs/archive/sft_chosen_lr2e5.yaml", "--preflight-only",
         "--preferences", "missing", "--m1-adapter", "missing", "--m1-selection", "missing",
     ], capture_output=True, text=True, check=False)
     assert result.returncode != 0

@@ -9,12 +9,18 @@ from vqa_explanation.data.formatting import format_target
 from vqa_explanation.data.io import read_jsonl, write_json, write_jsonl
 from vqa_explanation.inference.prompting import build_user_prompt
 from vqa_explanation.preference.freeze import prepare_exports
-from vqa_explanation.preference.schema import AI_TRIAGE_VERDICTS, ERROR_TYPES, REVIEW_STATES
+from vqa_explanation.preference.schema import (
+    AI_TRIAGE_VERDICTS,
+    ERROR_TYPES,
+    REVIEW_STATES,
+    reviewer_type,
+)
 from vqa_explanation.utils.run_provenance import sha256_file
 
 EDITABLE_FIELDS = (
     "review_status",
     "reviewer",
+    "reviewer_type",
     "reviewed_at",
     "answer_assessment",
     "explanation_support",
@@ -37,6 +43,10 @@ EDITABLE_FIELDS = (
 def review_origin_errors(row: dict) -> list[str]:
     """Use the same authorship rules for review audits and pair exports."""
     errors = []
+    try:
+        actor = reviewer_type(row)
+    except ValueError as error:
+        return [str(error)]
     for side in ("chosen", "rejected"):
         kind = row.get(f"{side}_origin_kind")
         kind = None if kind == "" else kind
@@ -67,6 +77,8 @@ def review_origin_errors(row: dict) -> list[str]:
                 errors.append(f"synthetic {side}_origin_source is required")
             if not isinstance(recipe, str) or not re.fullmatch(r"[0-9a-f]{64}", recipe):
                 errors.append(f"synthetic {side}_recipe_sha256 must be a lowercase SHA-256")
+        if actor == "ai" and row.get("review_status") == "accepted" and kind != "synthetic":
+            errors.append(f"AI-written {side} must declare synthetic origin")
     return errors
 
 
@@ -168,7 +180,7 @@ def render_editor(
 
 
 def convert_notes(notes, inputs, predictions, manifest, bundle_sha256, annotations, image_root):
-    """Require explicit human decisions; pending rows never become train data."""
+    """Require explicit attributed decisions; pending rows never become train data."""
     if manifest["inputs"].get("context", {}).get("annotations_sha256") != sha256_file(annotations):
         raise ValueError("Candidate bundle belongs to a different canonical annotation version")
     expected = {
@@ -206,6 +218,7 @@ def convert_notes(notes, inputs, predictions, manifest, bundle_sha256, annotatio
             raise ValueError(f"{qid}: invalid review_status")
         if note["review_status"] != "accepted":
             continue
+        actor = reviewer_type(note)
         if type(note.get("explanation_support")) is not int or note["explanation_support"] not in {
             0,
             1,
@@ -291,9 +304,11 @@ def convert_notes(notes, inputs, predictions, manifest, bundle_sha256, annotatio
                 "chosen": format_target(row["answer"], note["proposed_chosen_explanation"].strip()),
                 "rejected": format_target(row["answer"], rejected),
                 "error_type": note["error_type"],
-                "generation_method": "human_review_candidate",
+                "generation_method": f"{actor}_review_candidate",
                 "review_status": "accepted",
                 "reviewer": note["reviewer"],
+                "reviewer_type": actor,
+                "human_verified": actor == "human",
                 "reviewed_at": note["reviewed_at"],
                 "evidence": note["image_evidence"],
                 "rejected_span": note["unsupported_span"],
@@ -311,7 +326,7 @@ def convert_notes(notes, inputs, predictions, manifest, bundle_sha256, annotatio
             }
         )
     if not pairs:
-        raise ValueError("No accepted pairs; human review is required")
+        raise ValueError("No accepted pairs; explicit review is required")
     canonical = list(read_jsonl(annotations))
     accepted, _, _ = prepare_exports(pairs, canonical, image_root, sha256_file(annotations))
     return accepted
@@ -339,6 +354,10 @@ def export_review(
                 for state in sorted(REVIEW_STATES)
             },
             "accepted": len(pairs),
+            "reviewer_types": {
+                actor: sum(p["reviewer_type"] == actor for p in pairs)
+                for actor in ("human", "ai")
+            },
             "status": "validated_metadata",
             "limitations": "Does not verify reviewer identity or visual truth.",
         },

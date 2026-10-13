@@ -1,10 +1,14 @@
 # Gán nhãn cặp ưu tiên
 
-Cập nhật 12/10/2026. Bộ chính là 2.000 ứng viên từ M1-3683, train-only.
-Pilot cố định 100 ảnh có 13 nháp AI, chưa có cặp accepted.
+Cập nhật 13/10/2026. Bộ chính là 2.000 ứng viên từ M1-3683, train-only.
+Pilot 100 ảnh đã chốt theo quyền người thực hiện giao: 12 giữ, 47 loại,
+41 chưa chắc. Đã xem 250 ảnh, giữ 31 cặp; tách riêng 34 câu theo phạm vi.
+Full notes: 31 accepted / 128 rejected / 125 uncertain / 1.716 pending.
 
 Trang dùng hiện tại:
-`artifacts/preference_editor_m1_3683_2000_20261008/pilot_review_qc_20261012.html`.
+`artifacts/preference_editor_m1_3683_2000_20261008/review_results_250_20261013.html`.
+Trang chỉ hiển thị kết quả và lý do. Loại người/AI duyệt vẫn giữ trong
+JSONL và manifest để không lẫn nguồn nhãn. Trang nháp cũ được giữ nguyên.
 Các trang checkpoint-800 và bản nháp trước giữ làm lịch sử, không chạy lại.
 Bản review gốc: `artifacts/colab_history/20261008/preference_candidates_completed/review_2000.zip`,
 SHA-256 `365f080096f964a4a1d670faa7192a62697f45fb92f0480cdd555c7319b8af45`.
@@ -33,8 +37,8 @@ Từ đồng nghĩa có thể đúng theo ảnh nhưng không được đổi lu
 
 1. Xem ảnh, câu hỏi, đầu ra M1 và tham chiếu. Điền đánh giá theo rubric.
 2. Kiểm/sửa nháp; ghi chosen/rejected, loại lỗi, cụm cần kiểm và bằng chứng.
-3. Ghi mã người xác nhận thực tế, thời gian và quyết định. Mã ổn định có thể
-   thay tên thật; không điền mã người cho nhận xét AI.
+3. Ghi actor, thời gian và quyết định. Người kiểm dùng `reviewer_type=human`
+   và mã ổn định; AI kiểm dùng `reviewer_type=ai`, không dùng mã người.
 4. Xuất JSONL để lưu bền vững. Trang tự lưu nháp ở cùng trình duyệt/origin;
    khi đổi máy/cổng hoặc từ `file://` sang localhost, xuất rồi nhập lại.
 
@@ -43,11 +47,28 @@ trong mục kỹ thuật thu gọn. Nút Điền đề xuất giữ pending và 
 không tự xác nhận. Khi tự sửa, kiểm lại nguồn và recipe, không tự đặt hash.
 
 Bộ pilot chỉ hiển thị 100 câu nhưng xuất đủ 2.000 dòng, giữ nhãn ngoài pilot.
-AI đã rà 100 ảnh; lượt 12/10 mở lại 15 ảnh có nháp, giữ 9 sửa tự nhiên và
-4 lỗi có kiểm soát. Bỏ cặp lồng/giỏ và khu rừng vì đối lập chưa đủ rõ;
-85 nhận xét còn lại kế thừa, không gọi là lượt chấm độc lập mới. Xem
-`artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc`.
-Gợi ý AI có thể gây thiên lệch neo; ghi rõ quy trình trong báo cáo.
+Nháp lịch sử ở `artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc/ai_prefill`.
+Bản chốt pilot ở `data/preferences/pilot_ai_20261012`; bản tiếp tục ở
+`data/preferences/review_batch_151_250_20261013`. Lượt chốt xem lại 13 cặp và rút
+một câu mơ hồ; các lượt mở rộng xem trực tiếp 150 ảnh tiếp theo. Đây là kiểm
+của cùng trợ lý AI, không phải nhiều người độc lập hoặc chấm mù.
+
+Chính sách `ai_visual_review_v1` cho phép dùng quyết định AI đã xem ảnh,
+có đầy đủ bằng chứng và provenance. Export giữ `ai_review_candidate`,
+`reviewer_type=ai`, `human_verified=false`. Chosen AI và rejected AI tạo
+mới là synthetic có recipe; rejected M1 nguyên văn vẫn là model. Việc
+xóa dòng nguồn khỏi giao diện không được xóa nguồn khỏi dữ liệu kỹ thuật.
+Phần chấm mù test vẫn cần người thật theo giao thức đánh giá cuối.
+
+Lượt 151–250 có danh sách và quy tắc trong `selection.json` trước khi duyệt.
+Tối đa 10 negative có kiểm soát, không bắt đủ số: đổi một chi tiết nhìn
+rõ, giữ cùng đáp án và cấu trúc văn bản. Giữ 9 sau rà lại, loại cặp màu
+ảnh sepia; lỗi diễn đạt hình tượng cũng không dùng làm lỗi thị giác.
+Điểm `explanation_support` vẫn chấm M1 gốc, không chấm negative tạo mới.
+
+34 câu về ý định, sở thích hoặc tác động sức khỏe được tách chỉ từ câu hỏi.
+Nhóm này để uncertain, `image_evidence=null`, `explanation_support=null`;
+không tính là đã xem ảnh hay đánh giá M1. Các ID có trong `selection.json`.
 
 ## Truy vết văn bản
 
@@ -60,14 +81,36 @@ Gợi ý AI có thể gây thiên lệch neo; ghi rõ quy trình trong báo cáo
 
 Exporter lưu `original_candidate_origin` kể cả khi sửa hai phía.
 Các nguồn model phải khớp M1 được chọn; trainer kiểm lại fingerprint.
-Mọi cặp accepted có hash canonical/ảnh, người xác nhận/timezone, bằng chứng,
+Mọi cặp accepted có hash canonical/ảnh, actor/timezone, bằng chứng,
 đoạn rejected và provenance chosen/rejected. Đoạn lỗi phải có trong rejected.
 
 ## Audit → báo cáo pilot → export → freeze
 
-Ví dụ dưới chạy từ repo sau khi lưu file xác nhận thật vào
-`data/preferences/reviewed_notes.jsonl`. Hiện chưa có file đã chốt;
-không thay bằng nháp để bắt đầu train. Dùng output version mới nếu đã tồn tại.
+Lệnh bàn giao thực hiện audit, lưu một snapshot JSONL và báo phần còn thiếu:
+
+```powershell
+python scripts/finalize_preference_review.py --review-dir artifacts/preference_editor_m1_3683_2000_20261008 --notes <JSONL_DA_XUAT> --pilot artifacts/preference_editor_m1_3683_2000_20261008/pilot_review_100.json --output-dir <THU_MUC_MOI>
+```
+
+Lệnh không tạo quyết định, ghi tên người hay tự train. `handoff.md` tóm tắt
+số câu pending/accepted; `handoff.json` liệt kê ID các cặp nháp cần kiểm.
+`pilot_report.json` giữ báo cáo đầy đủ. File nguồn và bản bàn giao trước
+không bị ghi đè.
+
+Sau khi hoàn tất pilot, mở rộng và chốt N, dùng cùng lệnh với `--freeze`,
+`--expected-pairs N`, `--bundle`, `--expected-bundle-sha256`, `--annotations`
+và `--image-root`. N phải bằng đúng số accepted trong bản xuất. Lệnh gọi lại
+exporter/validator hiện có, tạo `frozen/accepted.jsonl`, `chosen_only.jsonl`
+và `manifest.json`; M2/M3 dùng cùng chosen. Không bắt buộc duyệt hết các
+câu ngoài phạm vi đã chốt. Thiếu xác nhận/sai N thì chỉ báo lý do, không
+tạo bộ train; exit 2 khi yêu cầu freeze bị chặn, exit 1 khi nguồn/nhãn lỗi.
+
+Đóng băng metadata chưa có nghĩa đủ quy mô nghiên cứu hoặc sẵn sàng GPU.
+Kiểm hai config, M1 selection và GPU theo `preference_training.md` sau đó.
+Các lệnh riêng dưới đây vẫn dùng được khi cần kiểm từng phần.
+
+Ví dụ dưới dành cho bộ cuối sau khi mở rộng và chốt N, không phải lệnh
+train 31 cặp hiện tại. Dùng output version mới nếu đã tồn tại.
 
 ```powershell
 $reviewDir = 'artifacts/preference_editor_m1_3683_2000_20261008'
@@ -82,7 +125,7 @@ python scripts/validate_preferences.py --input data/preferences/export_v1/review
 ```
 
 Audit kiểm đầy đủ trường và nguồn, không chứng minh nhãn thị giác đúng.
-Resolved cần người/timezone; rejected/uncertain cần lý do; accepted cần hai
+Resolved cần actor/timezone; rejected/uncertain cần lý do; accepted cần hai
 giải thích, đoạn lỗi, bằng chứng và nguồn. Pending có sửa nháp được đếm riêng.
 
 Báo cáo pilot chỉ ước lượng sau khi đủ 100 quyết định hợp lệ. Báo tổng

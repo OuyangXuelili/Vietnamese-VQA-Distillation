@@ -28,5 +28,6 @@ wandb/
 
 # Local notebooks and OS files
 .ipynb_checkpoints/
+notebooks/archive/*_with_outputs_*.ipynb
 .DS_Store
 Thumbs.db

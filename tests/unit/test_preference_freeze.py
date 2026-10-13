@@ -56,6 +56,53 @@ def test_freeze_exports_same_chosen_and_refuses_overwrite(inputs):
         freeze_pairs(candidate_path, annotations, root, out)
 
 
+def ai_pair(pair):
+    item = copy.deepcopy(pair)
+    item.update(reviewer_type="ai", human_verified=False, generation_method="ai_review_candidate")
+    for side in ("chosen", "rejected"):
+        item["provenance"][side] = {
+            "kind": "synthetic", "source": "recipe:q1", "recipe_sha256": "d" * 64,
+        }
+    return item
+
+
+def test_freeze_records_ai_review_separately(inputs):
+    root, _, annotations, pair = inputs
+    path = root / "pairs.jsonl"
+    write_jsonl(path, [ai_pair(pair)])
+    manifest = freeze_pairs(path, annotations, root, root / "frozen")
+    assert manifest["reviewer_types"] == {"ai": 1}
+    assert manifest["human_verified_pairs"] == 0
+
+
+@pytest.mark.parametrize("field,value", [
+    ("human_verified", True), ("human_verified", 0),
+    ("generation_method", "human_review_candidate"), ("reviewer_type", "human"),
+])
+def test_freeze_rejects_false_review_actor_claims(inputs, field, value):
+    root, canonical, annotations, pair = inputs
+    row = ai_pair(pair)
+    row[field] = value
+    with pytest.raises(ValueError, match="human_verified|generation_method"):
+        prepare_exports([row], canonical, root, sha256_file(annotations))
+
+
+def test_ai_pair_cannot_hide_manual_origin_at_freeze(inputs):
+    root, canonical, annotations, pair = inputs
+    row = ai_pair(pair)
+    row["provenance"]["chosen"] = {"kind": "manual", "source": "invented person"}
+    with pytest.raises(ValueError, match="manual origin"):
+        prepare_exports([row], canonical, root, sha256_file(annotations))
+
+
+def test_ai_pair_requires_explicit_nonhuman_flag(inputs):
+    root, canonical, annotations, pair = inputs
+    row = ai_pair(pair)
+    del row["human_verified"]
+    with pytest.raises(ValueError, match="human_verified=false"):
+        prepare_exports([row], canonical, root, sha256_file(annotations))
+
+
 @pytest.mark.parametrize(("field", "value", "error"), [
     ("source_question_id", "test-id", "canonical train"),
     ("image_path", "other.jpg", "image_path"),

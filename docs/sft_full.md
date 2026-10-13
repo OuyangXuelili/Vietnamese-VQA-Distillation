@@ -27,8 +27,9 @@ câu train, 1.407 validation, 1.968 test; kiểm tra đường dẫn ảnh train
 validation cố định 256 câu. Nó **không** tokenize toàn tập hoặc train mô hình.
 Mốc lịch sử: M1 chạy đến bước **300/3.683** ngày 29/09/2026, dừng chủ động
 và lưu checkpoint-300 trong run `sft-full_20260929_033221_507806`. Đã đối chiếu
-Drive ngày 30/09: `execution.json=paused`, exit code 0. Phiên tiếp dùng
-notebook 03, đúng source M1 ghim 28/09; không chạy lại pilot hoặc reset optimizer.
+Drive ngày 30/09: `execution.json=paused`, exit code 0. Phiên tiếp đã dùng
+notebook M1 lịch sử (nay lưu ở `notebooks/archive/` và Drive), đúng source
+M1 ghim 28/09; không chạy lại pilot hoặc reset optimizer.
 P0 đủ 29.715 mẫu đã đạt; dùng lại report khi hash/môi trường vẫn khớp.
 
 Optimizer pilot 20 bước đã qua trên T4 ngày 23/09/2026 (bằng chứng lịch sử).
@@ -96,7 +97,8 @@ không dùng phương thức nội bộ của Trainer để nạp checkpoint.
 
 ## Thứ tự chạy
 
-**Quy trình lịch sử 300 → 600, không chạy lại:** mở notebook 03, mount Drive và đọc run/checkpoint;
+**Quy trình lịch sử 300 → 600, không chạy lại:** mở notebook M1 lịch sử,
+mount Drive và đọc run/checkpoint;
 khôi phục source ghim + bundle ảnh vào runtime; kiểm report P0 và environment
 lock; chạy ô resume 300 → 600. Ô chạy chặn thiếu trạng thái checkpoint hoặc
 đã có run tiếp từ cùng checkpoint. Lần trở lại sau phải đọc run mới trước khi

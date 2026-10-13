@@ -1,6 +1,6 @@
 # Kế hoạch thực hiện
 
-Cập nhật 12/10/2026. Đề tài: **Nghiên cứu cải thiện chất lượng lời giải thích
+Cập nhật 13/10/2026. Đề tài: **Nghiên cứu cải thiện chất lượng lời giải thích
 trong hỏi đáp hình ảnh tiếng Việt**.
 
 Câu hỏi nghiên cứu: từ cùng M1 và cùng bộ chosen, DPO có giúp giải thích được
@@ -19,7 +19,7 @@ pháp, nhưng không suy từ đó ra điểm hoặc chuẩn chấm của trư�
 |---|---|---|
 | Dữ liệu | ViVQA-X `image_disjoint_v1`: 29.459 train, 1.407 validation, 1.968 test; đã tách ảnh | Xác nhận chất lượng cặp mới |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683; đủ validation M0/M1 | Đánh giá test sau khi khóa thiết kế |
-| Preference | 2.000 ứng viên từ train; AI rà 100 ảnh; kiểm lại còn 13 nháp | 0 accepted; cần xác nhận pilot và chốt N |
+| Preference | Pilot đã chốt; kiểm 250 ảnh, giữ 31 cặp; tách 34 câu theo phạm vi | Duyệt 1.716 pending, khóa N trước train |
 | M2/M3 | Trainer, resume và kiểm thử local | Bundle đã đóng băng, GPU gate, train thật |
 | Đánh giá cuối | Scorer và mẫu cố định 200 ảnh test | Prediction bốn nhánh và nhãn chấm |
 | Demo | Replay M1 và backend live đã viết | Nghiệm thu suy luận ảnh mới trên GPU |
@@ -31,26 +31,55 @@ trên 256 câu cố định, còn prediction được kiểm trên đủ 1.407 v
 
 ## 1. Chốt pilot và bộ cặp
 
-Mở [trang pilot](../artifacts/preference_editor_m1_3683_2000_20261008/pilot_review_qc_20261012.html).
-Có 9 nháp sửa lỗi tự nhiên và 4 nháp có lỗi tạo có kiểm soát. Người thực hiện
-kiểm ảnh, đáp án và hai giải thích trước khi xác nhận. Có thể dùng mã ẩn danh
-ổn định; nhận xét AI giữ riêng, không gán mã người vào nhãn AI.
+Mở [kết quả duyệt](../artifacts/preference_editor_m1_3683_2000_20261008/review_results_250_20261013.html).
+Theo quyền người thực hiện giao ngày 12/10, pilot đã chốt bằng kiểm thị giác
+AI: 12 giữ, 47 loại, 41 chưa chắc. Rút cặp `311428001` vì câu hỏi số nhiều
+không xác định rõ người. Đã kiểm tiếp 150 ảnh ngoài pilot.
+Hiện có 31 cặp: 18 rejected M1 nguyên văn và 13 negative có kiểm soát.
+Đây là dữ liệu preference do AI gán nhãn, không phải nhãn người/chấm mù.
 
-1. Chốt 100 quyết định pilot theo [rubric](preference_annotation.md), gồm cả
-   câu loại và mơ hồ. Xuất JSONL; nháp trình duyệt chưa phải đầu vào trainer.
-2. Chạy audit và báo cáo pilot. Báo nguồn rejected nguyên văn M1, manual và
+Đổi chính sách duyệt từ nháp chờ người sang `ai_visual_review_v1` trước
+train M2/M3. Trường actor và nguồn văn bản giữ trong metadata; giao diện
+chỉ hiển thị kết quả theo yêu cầu. Không đổi split, M1, LR hoặc test.
+Phản hồi AI và negative tổng hợp có tiền lệ trong
+[RLAIF-V](https://arxiv.org/abs/2405.17220) và
+[POVID](https://arxiv.org/abs/2402.11411). Đồ án không tái hiện nguyên các
+pipeline này hoặc lấy kết quả của họ làm bảo đảm cho nhãn hiện tại.
+
+1. Pilot đã hoàn tất; hồ sơ ở `data/preferences/pilot_ai_20261012`.
+   Không duyệt lại cùng 100 câu để tạo vòng kiểm hành chính mới.
+2. Chạy `scripts/finalize_preference_review.py` trên JSONL đã xuất để audit,
+   lưu snapshot và báo phần còn thiếu. Báo nguồn rejected nguyên văn M1, manual và
    synthetic riêng; chỉ dùng nhóm nguyên văn để dự toán pool lỗi tự nhiên.
 3. Chốt công duyệt, phạm vi chọn mẫu và N trước train. 1.000 là dự toán,
    không phải quota bắt buộc. Nếu nguồn sạch quá ít, bàn lại phạm vi; không
    tạo lỗi yếu hoặc hạ chuẩn để đủ số.
-4. Mở rộng trên pool train đã có. Các dòng không dùng được giữ pending.
-   Export subset accepted rồi validate/freeze thành `accepted.jsonl`,
+4. Mở rộng theo thứ tự pool đã khóa, mỗi lượt 100 câu. Bản tiếp tục ở
+   `data/preferences/review_batch_151_250_20261013/reviewed_notes.jsonl`;
+   còn 1.716 pending. Đã xem ảnh: 250; tách theo câu hỏi: 34, không chấm M1
+   hoặc ghi bằng chứng ảnh cho nhóm này. Câu đã xử lý nhưng không dùng giữ
+   rejected/uncertain và lý do. Không sinh lại 2.000 ứng viên.
+   Dùng chế độ `--freeze --expected-pairs N` để export subset accepted rồi
+   validate/freeze thành `accepted.jsonl`,
    `chosen_only.jsonl` và `manifest.json`.
 
 Điều kiện xong: N cặp cùng ảnh/câu hỏi/đáp án đúng, khác giải thích, có bằng
 chứng ảnh và nguồn văn bản; M2/M3 dùng đúng cùng ID/chosen. Cặp mơ hồ, sai
 đáp án hoặc chỉ khác văn phong không dùng cho thí nghiệm giải thích.
 Các nhãn tham chiếu nghi sai được ghi lý do loại, không sửa canonical giữa run.
+
+Pilot thu 8/100 cặp có rejected M1 nguyên văn. Vì vậy không thể mặc định
+pool 2.000 sẽ cho 1.000 lỗi tự nhiên. Chốt N từ cặp thực tế sau mở rộng;
+31 cặp hiện tại chỉ là bộ đang làm, chưa mở run chính. Báo nguồn tự nhiên
+và tổng hợp riêng, cùng rủi ro thiên lệch do một trợ lý gán nhãn. Phần chấm
+mù 200 ảnh test bởi người ở bước 3 vẫn giữ nguyên, không thay bằng AI.
+
+Lượt 151–250 khóa danh sách và quy tắc trước duyệt: tối đa 10 negative
+có kiểm soát, lấy trường hợp hợp lệ đầu tiên theo thứ tự. Chỉ đổi một
+chi tiết nhìn rõ, giữ đáp án và cấu trúc hai phía tương đương. Rà lại rút
+hai cặp yếu; lượt này giữ 5 negative M1 và 9 negative tổng hợp, không bù
+cho đủ quota. Chấm giải thích M1 gốc riêng, không chấm negative tạo mới
+thành lỗi của M1. Cặp đổi thuộc tính thường dễ; báo giới hạn này khi phân tích.
 
 ## 2. Kiểm GPU rồi train M2/M3
 
@@ -68,8 +97,8 @@ backbone đã tắt adapter. Giới hạn 1.536 token là cổng từ chối, kh
 hoặc bỏ riêng mẫu dài cho một nhánh. N=1.000 tương ứng 125 update.
 
 Protocol `vqa_nle_matched_lr_v2` chốt ngày 12/10 trước khi M2/M3 chạy GPU.
-M2 chính dùng `sft_chosen_matched_lr.yaml`; bản `sft_chosen.yaml` 2e-5 giữ
-làm thiết kế cũ, không tự thêm một run. CLI kiểm cả hai cấu hình và lưu
+M2 chính dùng `configs/training/sft_chosen.yaml`; bản 2e-5 giữ trong
+`configs/archive/sft_chosen_lr2e5.yaml`. CLI kiểm cả hai cấu hình và lưu
 protocol/hash vào run; đổi một nhánh phải khai báo protocol mới trước train.
 
 1. Chốt `expected_pairs=N` cho mọi config sẽ chạy; kiểm bundle/M1/hash.
@@ -144,8 +173,11 @@ rationale GPT làm gold hoặc báo ROUGE/BERTScore khi không có nhãn giải 
 
 ## Quy ước thực hiện
 
-Code dùng lại ở `src`, CLI ở `scripts`, cấu hình ở `configs`; notebook 03
-chỉ điều phối. Kiểm `scripts/check_project.py` trước release; full-data chỉ khi đổi
+Code dùng lại ở `src`, CLI ở `scripts`, cấu hình ở `configs`; notebook 04
+chỉ điều phối M2/M3, mặc định kiểm metadata. Lịch sử/output M1 được lưu
+riêng, không thêm cell lịch sử vào luồng đang dùng. Bản kiểm riêng 31 cặp
+chưa chạy được đưa ra khỏi luồng chính; chốt bộ cuối trước kiểm GPU.
+Kiểm `scripts/check_project.py` trước release; full-data chỉ khi đổi
 pipeline đầu vào. Giữ source/checkpoint/run cũ, xác nhận upload rồi mới ghi
 đã đồng bộ. Việc đã làm và hash nằm trong TIEN_DO, không tạo note tiến độ mới.
 

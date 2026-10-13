@@ -9,7 +9,7 @@ from vqa_explanation.data.formatting import format_target
 from vqa_explanation.data.io import read_jsonl, write_json, write_jsonl
 from vqa_explanation.data.schema import VQASample
 from vqa_explanation.inference.prompting import build_user_prompt, parse_prediction
-from vqa_explanation.preference.schema import PreferencePair
+from vqa_explanation.preference.schema import PreferencePair, reviewer_type
 from vqa_explanation.preference.validate import validate_pairs
 from vqa_explanation.utils.review_time import parse_review_time
 from vqa_explanation.utils.run_provenance import sha256_file, utc_now
@@ -43,7 +43,7 @@ def _image_path(root, relative):
 
 
 def prepare_exports(pairs, canonical, image_root, annotations_sha256):
-    """Validate pair metadata; explanation quality requires human review."""
+    """Validate pair metadata, not visual quality or reviewer identity."""
     report = validate_pairs(pairs)
     if report["errors"]:
         raise ValueError(f"Invalid pair schema: {report['errors']}")
@@ -78,6 +78,14 @@ def prepare_exports(pairs, canonical, image_root, annotations_sha256):
             raise ValueError(f"{pair.pair_id}: prompt differs from canonical question/template")
         if pair.review_status != "accepted":
             continue
+        actor = reviewer_type(raw)
+        if actor == "ai" and raw.get("human_verified") is not False:
+            raise ValueError(f"{pair.pair_id}: AI review requires human_verified=false")
+        if "human_verified" in raw and raw["human_verified"] is not (actor == "human"):
+            raise ValueError(f"{pair.pair_id}: human_verified differs from reviewer_type")
+        if pair.generation_method in {"ai_review_candidate", "human_review_candidate"}:
+            if pair.generation_method != f"{actor}_review_candidate":
+                raise ValueError(f"{pair.pair_id}: review generation_method differs from actor")
         if sample.question_id in seen_questions:
             raise ValueError(f"Duplicate accepted source question: {sample.question_id}")
         seen_questions.add(sample.question_id)
@@ -103,6 +111,8 @@ def prepare_exports(pairs, canonical, image_root, annotations_sha256):
             }:
                 raise ValueError(f"provenance.{side}.kind is unsupported")
             _text(origin.get("source"), f"provenance.{side}.source")
+            if actor == "ai" and origin["kind"] == "manual":
+                raise ValueError(f"{pair.pair_id}: AI-written text cannot claim manual origin")
             if origin["kind"] in {"model", "synthetic"}:
                 _hash(origin.get("recipe_sha256"), f"provenance.{side}.recipe_sha256")
             if origin["kind"] == "model":
@@ -140,7 +150,7 @@ def prepare_exports(pairs, canonical, image_root, annotations_sha256):
                             "answer": sample.answer, "explanations": [chosen.explanation],
                             "split": "train", "pair_id": pair.pair_id})
     if not accepted:
-        raise ValueError("No accepted pairs; human review is required before training export")
+        raise ValueError("No accepted pairs; explicit review is required before training export")
     accepted.sort(key=lambda row: row["pair_id"])
     chosen_rows.sort(key=lambda row: row["pair_id"])
     return accepted, chosen_rows, report
@@ -167,6 +177,8 @@ def freeze_pairs(input_path, annotations, image_root, output_dir):
         "review_counts": report["counts"],
         "error_types": dict(Counter(p["error_type"] for p in pairs)),
         "rejected_sources": dict(Counter(p["provenance"]["rejected"]["kind"] for p in pairs)),
+        "reviewer_types": dict(Counter(reviewer_type(p) for p in pairs)),
+        "human_verified_pairs": sum(reviewer_type(p) == "human" for p in pairs),
         "chosen_explanation_words": [len(r["explanations"][0].split()) for r in chosen],
         "rejected_explanation_words": [len(parse_prediction(p["rejected"]).explanation.split())
                                        for p in pairs],

@@ -100,6 +100,22 @@ def test_complete_pilot_reports_yield_projection_and_ai_contingency() -> None:
     assert "Không dùng trạng thái tạm thời" not in render_pilot_markdown(report)
 
 
+def test_ai_decisions_complete_pilot_but_are_not_human_contingency() -> None:
+    rows = [baseline("q1"), baseline("q2")]
+    notes = [resolved(rows[0], "accepted"), resolved(rows[1], "uncertain")]
+    for note in notes:
+        note.update(reviewer_type="ai", reviewer="codex-visual-review")
+    notes[0].update(chosen_origin_kind="synthetic", chosen_origin_source="recipe:q1",
+                    chosen_recipe_sha256="a" * 64)
+    report = summarize_pilot(notes, rows, ["q1", "q2"], triage_rows=[
+        {"source_question_id": "q1", "ai_verdict": "repair_explanation"}])
+    assert report["status"] == "complete"
+    assert report["pilot"]["reviewer_types"] == {"ai": 2}
+    assert report["ai_triage"]["human_decision_contingency"] == {}
+    assert report["gates"]["training_gate_open"] is False
+    assert "ai: 2" in render_pilot_markdown(report)
+
+
 def test_invalid_source_is_reported_instead_of_estimating_yield() -> None:
     rows = [baseline("q1")]
     notes = [resolved(rows[0], "accepted")]

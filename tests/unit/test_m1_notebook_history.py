@@ -1,4 +1,4 @@
-"""The cloud launcher prepares full inputs without silently starting training."""
+"""Regression checks for the preserved M1 notebook, not the active launcher."""
 
 import ast
 import hashlib
@@ -11,7 +11,8 @@ import pytest
 
 
 def notebook_cells():
-    path = Path(__file__).resolve().parents[2] / "notebooks/03_portable_runner.ipynb"
+    path = Path(__file__).resolve().parents[2] / (
+        "notebooks/archive/03_m1_and_preference_before_reorganization_20261013.ipynb")
     notebook = json.loads(path.read_text(encoding="utf-8"))
     return {
         cell["id"]: "".join(cell["source"])
@@ -19,10 +20,16 @@ def notebook_cells():
     }
 
 
-def test_current_workflow_is_ordered_before_history():
-    path = Path(__file__).resolve().parents[2] / "notebooks/03_portable_runner.ipynb"
+def test_archived_workflow_keeps_its_original_cell_order():
+    path = Path(__file__).resolve().parents[2] / (
+        "notebooks/archive/03_m1_and_preference_before_reorganization_20261013.ipynb")
     notebook = json.loads(path.read_text(encoding="utf-8"))
     cells = notebook["cells"]
+    assert [cell["id"] for cell in cells[:8]] == [
+        "gpu-gate-intro", "gpu-gate-mount", "gpu-gate-bootstrap", "gpu-gate-prepare",
+        "gpu-gate-m2", "gpu-gate-m3", "gpu-gate-history", "portable-intro",
+    ]
+    cells = cells[7:]
     assert [cell["id"] for cell in cells[:12]] == [
         "portable-intro", "portable-mount", "portable-source", "portable-data",
         "portable-epoch-audit", "portable-epoch-selection", "portable-validation-setup",
@@ -217,7 +224,8 @@ def test_preference_addition_does_not_rewrite_executed_code_history():
     old_code = [''.join(cell['source']) for cell in previous['cells']
                 if cell['cell_type'] == 'code']
     preserved_code = [source for name, source in current.items()
-                      if name not in {'preference-freeze-m1', 'preference-generate-main'}]
+                      if name not in {'preference-freeze-m1', 'preference-generate-main'}
+                      and not name.startswith('gpu-gate-')]
     assert preserved_code == old_code
 
 
@@ -403,7 +411,11 @@ def test_launcher_compiles_and_keeps_definition_separate_from_execution():
     } <= cells.keys()
     for name, source in cells.items():
         compile(source, name, "exec")
-    assert sum(source.count("drive.mount(") for source in cells.values()) == 1
+    history = {name: source for name, source in cells.items()
+               if not name.startswith('gpu-gate-')}
+    active = {name: source for name, source in cells.items() if name.startswith('gpu-gate-')}
+    assert sum(source.count("drive.mount(") for source in history.values()) == 1
+    assert sum(source.count("drive.mount(") for source in active.values()) == 1
     source = cells["portable-source"]
     assert "source_20260928_051956_295773" in source
     assert "_verify_source_archive(archive)" in source

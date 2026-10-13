@@ -8,15 +8,19 @@ gồm đáp án và lời giải thích.
 để biết việc đã chạy. [Mô tả dự án](docs/project_description.md) giải thích
 bài toán, dữ liệu và kết quả.
 
-## Trạng thái — 12/10/2026
+## Trạng thái — 13/10/2026
 
 - M1 đã học một epoch, chọn checkpoint-3683 bằng loss trên 256 validation.
   Đánh giá đủ 1.407 validation: EM 70,93%, Token-F1 75,11%, ROUGE-L 44,29%,
   BERTScore 82,47%. [Bảng điểm và CI](reports/generated/m0_m1_validation_20261011/README.md).
-- Có 2.000 ứng viên train-only; pilot 100 ảnh có 13 nháp AI, 0 accepted.
-  [Trang duyệt hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/pilot_review_qc_20261012.html).
+- Pilot 100 đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Đã kiểm 250 ảnh,
+  giữ 31 cặp; tách 34 câu ngoài phạm vi chỉ từ câu hỏi, còn 1.716 pending.
+  [Kết quả hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/review_results_250_20261013.html).
+  Nguồn duyệt giữ trong metadata; chưa có nhãn người hoặc bộ train cuối.
 - Trainer M2/M3 đã kiểm local; chưa train GPU. Demo replay đã có,
   live chưa nghiệm thu GPU. Chưa có kết quả test cuối.
+- Bàn giao bản duyệt: `scripts/finalize_preference_review.py` audit/lưu snapshot;
+  chỉ export/freeze khi nhãn được xác nhận và N khớp. Không tự train.
 
 ## Các nhánh
 
@@ -38,7 +42,7 @@ src/vqa_explanation/     dữ liệu, train, suy luận, đánh giá và demo
 scripts/                CLI
 configs/                thuật toán và đường dẫn từng môi trường
 tests/                  kiểm thử
-notebooks/              notebook 03 điều phối; bản cũ ở archive
+notebooks/              04_train_preferences.ipynb; lịch sử M1 ở archive
 app/static/             giao diện demo
 docs/, reports/         hướng dẫn, bảng và hình
 data/, runs/, artifacts/ dữ liệu, checkpoint và bằng chứng ngoài Git
@@ -48,6 +52,9 @@ data/, runs/, artifacts/ dữ liệu, checkpoint và bằng chứng ngoài Git
 source release đang dùng. HTML/CSS/JavaScript của editor nằm riêng trong
 `src/vqa_explanation/preference/templates/` và được nhúng khi xuất trang duyệt.
 [Quy trình review](docs/code_review.md) mô tả các kiểm tra cần có trước khi đồng bộ.
+Notebook `04_train_preferences.ipynb` có 7 cell, setup/kiểm đầu vào và gọi M2/M3. Bản M1 đã
+chạy giữ trong `notebooks/archive/`, gồm cả output tải từ Colab.
+[Mở M1 có output](https://colab.research.google.com/drive/13Abjl7kJyDKzbxyYsCetJ540OzdK2P_E).
 
 ## Local
 
@@ -68,7 +75,7 @@ Checkout mới: xem [dữ liệu](docs/data_protocol.md) và
 
 ## Việc tiếp theo
 
-1. Xác nhận pilot và chốt N: [gán nhãn](docs/preference_annotation.md).
+1. Duyệt phần còn lại của pool đã có và chốt N: [gán nhãn](docs/preference_annotation.md).
 2. Export/freeze bộ cặp chung, kiểm GPU rồi train: [M2/M3](docs/preference_training.md).
 3. Validation/test, chấm theo ảnh: [giao thức](docs/experiment_protocol.md),
    [chấm mù](docs/human_evaluation.md).

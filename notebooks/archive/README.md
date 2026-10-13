@@ -12,10 +12,16 @@ Giữ nguyên nội dung/output các kiểm thử trước M1. Không cần ch�
 | 06 | Đo token trên 512 mẫu |
 | 07 | Một lượt forward/backward, không cập nhật optimizer |
 | 08 | Kiểm tra optimizer và dừng 10 → resume 20 |
+| 03_m1_and_preference_before_reorganization_20261013 | Bản local nguyên vẹn trước khi rút gọn notebook 03; chứa cả phần thử chưa chạy |
+| 03_m1_completed_with_outputs_20261013 | Bản tải từ Colab, 20 cell và 24 output; giữ nguyên byte |
 
 Không dùng kết quả smoke thay kết quả full M1. Notebook 05–07 có thể chọn
 release mới nhất khi chạy lại; 08 ghim release rehearsal cũ. Không Run all
 để xem output lịch sử. Đường dẫn cloud trong notebook được giữ nguyên.
 
-Điểm vào hiện hành: [03](../03_portable_runner.ipynb).
+Huấn luyện tiếp: [04_train_preferences.ipynb](../04_train_preferences.ipynb).
 Trạng thái: [TIEN_DO.md](../../TIEN_DO.md).
+
+Bản `with_outputs` chỉ lưu bằng chứng local/Drive, không đưa vào Git hoặc
+source ZIP. Source/config của từng run M1 vẫn dùng release đã ghim trong
+run đó; không dùng source mới để chạy lại các cell cũ.

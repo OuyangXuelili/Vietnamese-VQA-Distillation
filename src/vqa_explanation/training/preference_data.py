@@ -320,9 +320,9 @@ def freeze_selection(args):
 
 
 def prepare_stage(args):
+    """Revalidate frozen data and identical chosen targets before loading a model."""
     study_path = getattr(args, "study_config", None)
     comparison = validate_study_arm(args.config, study_path) if study_path else None
-    """Revalidate frozen data and identical chosen targets before loading a model."""
     env = load_environment(args.environment)
     cfg = load_config(args.config)
     model_cfg = yaml.safe_load(args.model_config.read_text(encoding="utf-8"))["model"]

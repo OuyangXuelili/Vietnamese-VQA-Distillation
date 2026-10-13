@@ -1,6 +1,6 @@
 # Hỏi đáp hình ảnh tiếng Việt có lời giải thích
 
-Cập nhật 12/10/2026. [Kế hoạch](research_plan.md) ghi việc cần làm;
+Cập nhật 13/10/2026. [Kế hoạch](research_plan.md) ghi việc cần làm;
 [TIEN_DO.md](../TIEN_DO.md) ghi bằng chứng thực hiện.
 
 ## Bài toán
@@ -90,7 +90,10 @@ Run cuối: `runs/m1/sft-full_20261007_023531_870900`.
 
 M1-3683 sinh 2.000 ứng viên train-only, một câu/ảnh của pool seed 42. EM
 70,15% trên pool là thống kê ứng viên, không phải tỷ lệ cặp hợp lệ.
-Pilot 100 ảnh có 13 nháp AI: 9 sửa tự nhiên, 4 lỗi có kiểm soát; 0 accepted.
+Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 250 ảnh,
+bộ đang làm có 31 cặp; 34 câu ngoài phạm vi được tách chỉ từ câu hỏi.
+Các nhãn này do cùng một trợ lý AI kiểm thị giác, không phải nhãn người
+hoặc chấm mù. Nguồn actor và văn bản vẫn giữ trong metadata.
 
 Cặp hợp lệ giữ cùng đáp án đúng, chosen có bằng chứng liên quan và rejected
 có vấn đề xác định được theo ảnh. Ghi riêng lỗi mâu thuẫn, chi tiết không
@@ -108,8 +111,8 @@ Một người chấm thì không báo agreement hai người. [Giao thức](hum
 
 FastAPI và HTML/CSS/JS nhận ảnh/câu hỏi, hiển thị đáp án/giải thích. Replay
 đọc đúng output M1 của 12 ảnh validation; live còn cần nghiệm thu GPU.
-Trang duyệt cặp không phải demo. Source dùng lại ở `src`, notebook 03 chỉ
-điều phối; local chuẩn bị/đánh giá, cloud train. [Cách chạy](demo.md).
+Trang duyệt cặp không phải demo. Source dùng lại ở `src`; notebook 04 chỉ
+điều phối M2/M3. Local chuẩn bị/đánh giá, cloud train. [Cách chạy](demo.md).
 
 Đóng góp dự kiến: bộ cặp tiếng Việt có truy vết, đối chứng chosen-SFT/DPO và
 phân tích lỗi theo ảnh. Qwen/LoRA/DPO là phương pháp kế thừa.

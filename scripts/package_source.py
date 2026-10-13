@@ -20,6 +20,7 @@ ROOT_FILES = (
     "requirements-cloud-preference.txt",
     "Makefile",
     ".gitignore",
+    ".gitattributes",
     "artifacts/README.md",
     ".github/workflows/ci.yml",
 )
@@ -68,8 +69,11 @@ def source_files(root: Path) -> list[Path]:
         for path in (root / folder).rglob("*"):
             if not path.is_file() or path.suffix not in SOURCE_SUFFIXES:
                 continue
+            if path.suffix == ".ipynb" and "_with_outputs_" in path.stem:
+                continue
             relative = path.relative_to(root)
-            if any(part.startswith(".") or part == "__pycache__" for part in relative.parts):
+            if any(part.startswith(".") or part == "__pycache__" or part.endswith(".egg-info")
+                   for part in relative.parts):
                 continue
             files.append(path)
     missing = REQUIRED_FILES - {path.relative_to(root).as_posix() for path in files}

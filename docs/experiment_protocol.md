@@ -109,8 +109,8 @@ nó sinh ra. Cơ sở: [e-ViL](https://arxiv.org/abs/2105.03761).
 
 ### Sửa đối chứng trước train — 12/10
 
-M2 chính chuyển sang `sft_chosen_matched_lr.yaml`, LR 5e-6 như M3. Bản 2e-5
-ở `sft_chosen.yaml` là kế hoạch chưa thực thi, giữ để truy vết, không được
+M2 chính dùng `configs/training/sft_chosen.yaml`, LR 5e-6 như M3. Bản 2e-5
+ở `configs/archive/sft_chosen_lr2e5.yaml` là kế hoạch chưa thực thi, giữ để truy vết, không được
 ghép với kết quả chính. Không thay M1, split, candidate hoặc test.
 
 CLI đọc phần training của `study_budget_v2.yaml`, kiểm hai nhánh có cùng

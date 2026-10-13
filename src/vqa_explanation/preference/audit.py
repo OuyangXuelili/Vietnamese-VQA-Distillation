@@ -6,7 +6,7 @@ import unicodedata
 from collections import Counter
 
 from vqa_explanation.preference.review import EDITABLE_FIELDS, review_origin_errors
-from vqa_explanation.preference.schema import ERROR_TYPES, REVIEW_STATES
+from vqa_explanation.preference.schema import ERROR_TYPES, REVIEW_STATES, reviewer_type
 from vqa_explanation.utils.review_time import parse_review_time
 
 
@@ -113,6 +113,10 @@ def audit_review_notes(
                 if qid in pilot_set:
                     pilot_counts["draft_pending"] += 1
         elif status in REVIEW_STATES:
+            try:
+                reviewer_type(row)
+            except ValueError as error:
+                row_errors.append(str(error))
             if not _text(row.get("reviewer")):
                 row_errors.append("reviewer is required for a resolved decision")
             if not _valid_time(row.get("reviewed_at")):

@@ -40,10 +40,12 @@
     explanation_support: ['','0','1','2'], canonical_answer_verified: ['','true','false'],
     error_type: ['','object','attribute','relation_action','natural_model_error'],
     rejected_origin_kind: ['','model','manual','synthetic'],
-    chosen_origin_kind: ['','manual','synthetic']
+    chosen_origin_kind: ['','manual','synthetic'],
+    reviewer_type: ['','human','ai']
   };
   const labels = {
     review_status:'Quyết định', reviewer:'Mã xác nhận (có thể ẩn danh)',
+    reviewer_type:'Nguồn quyết định',
     answer_assessment:'Đáp án M1',
     explanation_support:'Giải thích M1 hỗ trợ đáp án đến đâu?',
     canonical_answer_verified:'Đáp án tham chiếu đúng theo ảnh?',
@@ -68,7 +70,8 @@
     error_type:{object:'Đối tượng',attribute:'Thuộc tính',relation_action:'Quan hệ / hành động',
       natural_model_error:'Lỗi tự nhiên khác của M1'},
     rejected_origin_kind:{model:'M1 nguyên văn',manual:'Người viết / sửa',synthetic:'AI / recipe'},
-    chosen_origin_kind:{manual:'Người viết / sửa',synthetic:'AI / recipe'}
+    chosen_origin_kind:{manual:'Người viết / sửa',synthetic:'AI / recipe'},
+    reviewer_type:{human:'Người kiểm',ai:'AI kiểm'}
   };
   const reviewSections = [
     {title:'1. Đánh giá theo ảnh',hint:'Đọc ảnh, câu hỏi và đầu ra M1 trước khi ghi nhãn.',
@@ -81,7 +84,7 @@
       fields:['review_status','reviewer','exclusion_reason']}
   ];
   const technicalFields = ['rejected_origin_kind','rejected_origin_source','rejected_recipe_sha256',
-    'chosen_origin_kind','chosen_origin_source','chosen_recipe_sha256'];
+    'chosen_origin_kind','chosen_origin_source','chosen_recipe_sha256','reviewer_type'];
   function createReviewSections() {
     const containers=new Map();
     reviewSections.forEach(section=>{

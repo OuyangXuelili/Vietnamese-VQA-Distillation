@@ -14,6 +14,16 @@ AI_TRIAGE_VERDICTS = {
 }
 
 
+def reviewer_type(row: dict) -> str:
+    """Legacy reviews are human; AI decisions must declare their actor type."""
+    value = row.get("reviewer_type")
+    if value is None or value == "":
+        return "human"
+    if not isinstance(value, str) or value not in {"human", "ai"}:
+        raise ValueError("reviewer_type must be human or ai")
+    return value
+
+
 @dataclass(frozen=True)
 class PreferencePair:
     pair_id: str
