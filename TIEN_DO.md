@@ -23,8 +23,10 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 - Mở đúng file Drive `04_train_preferences.ipynb`, ID
   `1emxS1s8mZHYQxVqR4e4tA8j8G_xrzhl0`, tài khoản lưu dự án. Không tạo
   notebook mới, không đổi dữ liệu/siêu tham số hoặc chạy lại M1.
-- Colab đã kết nối Python 3/GPU T4, RAM 12,67 GB. Cell 1 đang chờ hộp
-  kết nối Google Drive; các cell source/preflight/gate/train chưa chạy.
+- Colab đã kết nối Python 3/GPU T4, RAM 12,67 GB. Cell 1 hết thời gian
+  chờ và báo `ValueError: mount failed`; hộp kết nối Drive vẫn mở.
+  Các cell source/preflight/gate/train chưa chạy. Sau xác thực phải chạy
+  lại cell 1, không chạy tất cả hoặc bỏ qua gate.
   Đã yêu cầu người dùng hoàn tất xác thực; không tự bấm quyền Drive.
 - Rà launcher phát hiện trường pin decision record đã được ghi nhưng chưa
   được đối chiếu. Thêm kiểm checksum quyết định và manifest frozen trước
