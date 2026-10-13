@@ -2,11 +2,11 @@
 
 Cập nhật 13/10/2026. Bộ chính là 2.000 ứng viên từ M1-3683, train-only.
 Pilot 100 ảnh đã chốt theo quyền người thực hiện giao: 12 giữ, 47 loại,
-41 chưa chắc. Đã xem 350 ảnh, giữ 48 cặp; tách riêng 34 câu theo phạm vi.
-Full notes: 48 accepted / 177 rejected / 159 uncertain / 1.616 pending.
+41 chưa chắc. Đã xem 450 ảnh, giữ 63 cặp; tách riêng 34 câu theo phạm vi.
+Full notes: 63 accepted / 235 rejected / 186 uncertain / 1.516 pending.
 
 Trang dùng hiện tại:
-`artifacts/preference_editor_m1_3683_2000_20261008/review_results_350_20261013.html`.
+`artifacts/preference_editor_m1_3683_2000_20261008/review_results_450_20261013.html`.
 Trang chỉ hiển thị kết quả và lý do. Loại người/AI duyệt vẫn giữ trong
 JSONL và manifest để không lẫn nguồn nhãn. Trang nháp cũ được giữ nguyên.
 Các trang checkpoint-800 và bản nháp trước giữ làm lịch sử, không chạy lại.
@@ -49,8 +49,8 @@ không tự xác nhận. Khi tự sửa, kiểm lại nguồn và recipe, không
 Bộ pilot chỉ hiển thị 100 câu nhưng xuất đủ 2.000 dòng, giữ nhãn ngoài pilot.
 Nháp lịch sử ở `artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc/ai_prefill`.
 Bản chốt pilot ở `data/preferences/pilot_ai_20261012`; bản tiếp tục ở
-`data/preferences/review_batch_251_350_20261013`. Lượt chốt xem lại 13 cặp và rút
-một câu mơ hồ; các lượt mở rộng xem 250 ảnh tiếp theo. Đây là kiểm
+`data/preferences/review_batch_351_450_20261013`. Lượt chốt xem lại 13 cặp và rút
+một câu mơ hồ; các lượt mở rộng xem 350 ảnh tiếp theo. Đây là kiểm
 của cùng trợ lý AI, không phải nhiều người độc lập hoặc chấm mù.
 
 Chính sách `ai_visual_review_v1` cho phép dùng quyết định AI đã xem ảnh,
@@ -71,6 +71,12 @@ Lượt 251–350 theo 100 ID pending khóa từ lượt trước: 17 giữ, 49 
 Có 7 negative M1 nguyên văn và 10 có kiểm soát; giữ nguyên pilot và các
 nhãn ngoài lượt. Tổng 48 cặp gồm 25 model / 23 synthetic. `continuation.json`
 khóa 100 ID tiếp theo. Mốc dự toán 200 không tự mở cổng train.
+
+Lượt 351–450 giữ 15 cặp: 6 negative M1 và 9 có kiểm soát; 58 loại,
+27 chưa chắc. Xem cả lượt qua bảng ảnh và mở lại ảnh gốc cho cặp giữ.
+Rút các trường hợp độ mềm chuối, ăn cỏ và màu đĩa bay chưa tạo được
+đối lập chắc chắn. Audit còn phát hiện cụm sân tennis không có trong M1
+gốc; cặp này được loại trước export. Tổng 63 cặp: 31 model / 32 synthetic.
 
 34 câu về ý định, sở thích hoặc tác động sức khỏe được tách chỉ từ câu hỏi.
 Nhóm này để uncertain, `image_evidence=null`, `explanation_support=null`;
@@ -116,7 +122,7 @@ Kiểm hai config, M1 selection và GPU theo `preference_training.md` sau đó.
 Các lệnh riêng dưới đây vẫn dùng được khi cần kiểm từng phần.
 
 Ví dụ dưới dành cho bộ cuối sau khi mở rộng và chốt N, không phải lệnh
-train 48 cặp hiện tại. Dùng output version mới nếu đã tồn tại.
+train 63 cặp hiện tại. Dùng output version mới nếu đã tồn tại.
 
 ```powershell
 $reviewDir = 'artifacts/preference_editor_m1_3683_2000_20261008'

@@ -9,7 +9,7 @@ Cập nhật: 13/10/2026.
 | Dữ liệu | ViVQA-X `image_disjoint_v1`, 29.459 train / 1.407 validation / 1.968 test; 28.180 ảnh đã kiểm local và bundle cloud |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
 | Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
-| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 350 ảnh, giữ 48 cặp; tách 34 câu theo phạm vi. Full notes: 48 giữ / 177 loại / 159 chưa chắc / 1.616 pending |
+| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 450 ảnh, giữ 63 cặp; tách 34 câu theo phạm vi. Full notes: 63 giữ / 235 loại / 186 chưa chắc / 1.516 pending |
 | M2/M3 | Trainer/resume đã kiểm local; có CLI bàn giao review → freeze; chưa train GPU |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
@@ -18,7 +18,42 @@ Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
 
-## 13/10 — tiếp tục duyệt 100 ảnh
+## 13/10 — duyệt lượt 351–450
+
+- Khóa 100 ID trước khi xem ảnh, lấy đúng `continuation.json` lượt trước.
+  Xem đủ ảnh qua bảng, mở lại ảnh gốc cho các cặp giữ. Chốt 15 cặp:
+  6 rejected M1 nguyên văn, 9 có kiểm soát; 58 loại, 27 chưa chắc.
+- Rút trường hợp độ mềm chuối, hành động ăn cỏ và màu đĩa bay sau rà lại.
+  Một cụm sân tennis đọc nhầm từ bảng ảnh bị audit chặn vì không có trong
+  M1 gốc; đã loại trước export. Snapshot hai file của lần xuất lỗi giữ
+  trong `artifacts/preference_review_450_20261013/failed_publish`.
+- Bản hiện hành: `data/preferences/review_batch_351_450_20261013`.
+  Audit 2.000 dòng qua; 63 cặp cùng ID/chosen cho M2/M3, gồm 31 model
+  và 32 synthetic. Không đổi pilot hoặc nhãn ngoài lượt. 0 nhãn người.
+- Trang kết quả `review_results_450_20261013.html`; ảnh, text M1 và các
+  bản lịch sử giữ nguyên. Khóa 100 ID tiếp theo; còn 1.516 pending.
+  M1 không chạy lại, M2/M3 chưa train hoặc khóa N. Không tạo notebook mới.
+- `check_project.py --full-data` qua Ruff và 910 test, không skip;
+  audit 32.834 dòng và preflight 29.459 train qua. Run audit
+  `audit_20261013_115719_134769`, preflight `preflight_20261013_115841_377679`.
+  Log ở `artifacts/preference_review_450_20261013/check_project.log`;
+  26 warning từ fixture PEFT. 304 file lịch sử còn nguyên hash.
+- Gói nhãn 39 file có đủ recipe/nguồn, không chứa ảnh hoặc weights.
+  Drive `preference_local` nhận ZIP/sha, tải lại khớp
+  `48aaa4570463e40b551573ef981301d3f8a1fc80ac27fa05cdc0d3e122caffd1`.
+  Notes lên phiên bản 4, tải lại khớp local; handoff md/json v5.
+- Tài liệu cập nhật cùng file Drive: research_plan v19,
+  preference_annotation v12, preference_training v13, project_description v6.
+  Kế hoạch tải lại khớp local. Source 238 file `source_20261013_120450_965965`
+  tải lại khớp SHA-256
+  `a26ab31c0285861582b0937e9320551430c8966ba17c16efa98772e330e264be`.
+  Nhật ký được đồng bộ riêng sau snapshot source.
+- Record khởi chạy Drive v5 ghim source mới, tải lại khớp local.
+  Hai nhánh inspect dừng trước tải model vì bộ dữ liệu/N chưa khóa;
+  `data_locked=false` và cấu hình LR/epoch/batch vẫn giữ nguyên.
+  Biên nhận: `artifacts/preference_review_450_20261013/sync/receipt.json`.
+
+## 13/10 — duyệt lượt 251–350
 
 - Dùng đúng 100 ID pending đã khóa ở lượt trước. Xem cả lượt qua bảng ảnh,
   mở lại ảnh gốc cho các cặp giữ. Giữ 17 cặp: 7 negative M1 nguyên văn,

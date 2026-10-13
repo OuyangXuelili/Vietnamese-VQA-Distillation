@@ -19,7 +19,7 @@ pháp, nhưng không suy từ đó ra điểm hoặc chuẩn chấm của trư�
 |---|---|---|
 | Dữ liệu | ViVQA-X `image_disjoint_v1`: 29.459 train, 1.407 validation, 1.968 test; đã tách ảnh | Xác nhận chất lượng cặp mới |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683; đủ validation M0/M1 | Đánh giá test sau khi khóa thiết kế |
-| Preference | Pilot đã chốt; kiểm 350 ảnh, giữ 48 cặp; tách 34 câu theo phạm vi | Duyệt 1.616 pending, khóa N trước train |
+| Preference | Pilot đã chốt; kiểm 450 ảnh, giữ 63 cặp; tách 34 câu theo phạm vi | Duyệt 1.516 pending, khóa N trước train |
 | M2/M3 | Trainer, resume và kiểm thử local | Bundle đã đóng băng, GPU gate, train thật |
 | Đánh giá cuối | Scorer và mẫu cố định 200 ảnh test | Prediction bốn nhánh và nhãn chấm |
 | Demo | Replay M1 và backend live đã viết | Nghiệm thu suy luận ảnh mới trên GPU |
@@ -31,11 +31,11 @@ trên 256 câu cố định, còn prediction được kiểm trên đủ 1.407 v
 
 ## 1. Chốt pilot và bộ cặp
 
-Mở [kết quả duyệt](../artifacts/preference_editor_m1_3683_2000_20261008/review_results_350_20261013.html).
+Mở [kết quả duyệt](../artifacts/preference_editor_m1_3683_2000_20261008/review_results_450_20261013.html).
 Theo quyền người thực hiện giao ngày 12/10, pilot đã chốt bằng kiểm thị giác
 AI: 12 giữ, 47 loại, 41 chưa chắc. Rút cặp `311428001` vì câu hỏi số nhiều
-không xác định rõ người. Đã kiểm tiếp 250 ảnh ngoài pilot.
-Hiện có 48 cặp: 25 rejected M1 nguyên văn và 23 negative có kiểm soát.
+không xác định rõ người. Đã kiểm tiếp 350 ảnh ngoài pilot.
+Hiện có 63 cặp: 31 rejected M1 nguyên văn và 32 negative có kiểm soát.
 Đây là dữ liệu preference do AI gán nhãn, không phải nhãn người/chấm mù.
 
 Đổi chính sách duyệt từ nháp chờ người sang `ai_visual_review_v1` trước
@@ -55,8 +55,8 @@ pipeline này hoặc lấy kết quả của họ làm bảo đảm cho nhãn hi
    không phải quota bắt buộc. Nếu nguồn sạch quá ít, bàn lại phạm vi; không
    tạo lỗi yếu hoặc hạ chuẩn để đủ số.
 4. Mở rộng theo thứ tự pool đã khóa, mỗi lượt 100 câu. Bản tiếp tục ở
-   `data/preferences/review_batch_251_350_20261013/reviewed_notes.jsonl`;
-   còn 1.616 pending. Đã xem ảnh: 350; tách theo câu hỏi: 34, không chấm M1
+   `data/preferences/review_batch_351_450_20261013/reviewed_notes.jsonl`;
+   còn 1.516 pending. Đã xem ảnh: 450; tách theo câu hỏi: 34, không chấm M1
    hoặc ghi bằng chứng ảnh cho nhóm này. Câu đã xử lý nhưng không dùng giữ
    rejected/uncertain và lý do. Không sinh lại 2.000 ứng viên.
    Dùng chế độ `--freeze --expected-pairs N` để export subset accepted rồi
@@ -70,7 +70,7 @@ Các nhãn tham chiếu nghi sai được ghi lý do loại, không sửa canoni
 
 Pilot thu 8/100 cặp có rejected M1 nguyên văn. Vì vậy không thể mặc định
 pool 2.000 sẽ cho 1.000 lỗi tự nhiên. Chốt N từ cặp thực tế sau mở rộng;
-48 cặp hiện tại chỉ là bộ đang làm, chưa mở run chính. Báo nguồn tự nhiên
+63 cặp hiện tại chỉ là bộ đang làm, chưa mở run chính. Báo nguồn tự nhiên
 và tổng hợp riêng, cùng rủi ro thiên lệch do một trợ lý gán nhãn. Phần chấm
 mù 200 ảnh test bởi người ở bước 3 vẫn giữ nguyên, không thay bằng AI.
 
@@ -87,6 +87,10 @@ của lượt trước. Giữ 17 cặp: 7 negative M1 nguyên văn và 10 có ki
 cặp giữ. Không đổi quyết định ngoài lượt này hoặc pilot. Mốc 200 cặp chỉ
 để dự toán công duyệt, không phải ngưỡng bảo đảm chất lượng. Hoàn tất phạm
 vi pool đã khóa rồi quyết định N theo dữ liệu thực, trước khi train/test.
+
+Lượt 351–450 giữ 15 cặp sau rà ảnh gốc và văn bản M1: 6 negative nguyên
+văn, 9 có kiểm soát; 58 loại, 27 chưa chắc. Không sửa pilot hay quyết định
+cũ. Audit nguồn và trường dữ liệu không thay thế kiểm thị giác.
 
 ## 2. Kiểm GPU rồi train M2/M3
 
