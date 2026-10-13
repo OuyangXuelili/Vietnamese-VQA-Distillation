@@ -90,9 +90,9 @@ Run cuối: `runs/m1/sft-full_20261007_023531_870900`.
 
 M1-3683 sinh 2.000 ứng viên train-only, một câu/ảnh của pool seed 42. EM
 70,15% trên pool là thống kê ứng viên, không phải tỷ lệ cặp hợp lệ.
-Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 550 ảnh,
-bộ đang làm có 79 cặp: 37 negative M1 và 42 có kiểm soát. 34 câu ngoài
-phạm vi được tách chỉ từ câu hỏi; còn 1.416 pending trong pool đã khóa.
+Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 650 ảnh,
+bộ đang làm có 95 cặp: 43 negative M1 và 52 có kiểm soát. 34 câu ngoài
+phạm vi được tách chỉ từ câu hỏi; còn 1.316 pending trong pool đã khóa.
 Các nhãn này do cùng một trợ lý AI kiểm thị giác, không phải nhãn người
 hoặc chấm mù. Nguồn actor và văn bản vẫn giữ trong metadata.
 
