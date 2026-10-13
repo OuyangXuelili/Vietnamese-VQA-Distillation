@@ -207,6 +207,7 @@ def test_data_plan_binds_both_declared_arm_configs(stage_inputs):
         Path("configs/experiments/study_budget_v2.yaml").read_text(encoding="utf-8")
     )
     study["training"].update(m2_config=str(sft_path), m3_config=str(stage_inputs.config))
+    study["preferences"]["locked_pairs"] = 1
     stage_inputs.study_config = root / "study.yaml"
     stage_inputs.study_config.write_text(yaml.safe_dump(study), encoding="utf-8")
     plan = prepare_stage(stage_inputs)[2]

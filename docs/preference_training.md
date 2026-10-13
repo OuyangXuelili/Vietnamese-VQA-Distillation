@@ -1,8 +1,8 @@
 # Huấn luyện M2/M3
 
-M1-3683 đã được chọn và có đủ prediction validation. Pilot đã chốt; bộ cặp
-đang mở rộng có 153 cặp, chưa chốt cho run chính. Cần chốt N và đóng băng
-bộ cuối. Dữ liệu duyệt bằng AI giữ actor rõ trong metadata, không ghi
+M1-3683 đã được chọn và có đủ prediction validation. Bộ cuối đã khóa
+186 cặp / 186 ảnh, gồm 78 rejected M1 nguyên văn và 108 negative có kiểm soát.
+Đầu vào ở `data/preferences/vivqax_m1_3683_v1/frozen`. Dữ liệu duyệt bằng AI giữ actor rõ trong metadata, không ghi
 thành nhãn người. Trạng thái tại
 [TIEN_DO.md](../TIEN_DO.md); cách duyệt/export ở
 [preference_annotation.md](preference_annotation.md).
@@ -40,9 +40,10 @@ record khởi chạy thành tham số CLI trên; không chứa loss hoặc train
 Hai cell M2/M3 gọi cùng helper, tránh chép lại phần dựng lệnh.
 
 Record `source/preference_training_launch_v1.json` giữ đường dẫn môi trường,
-preferences, M1/selection, hai config và `run_group`. Mặc định chưa khóa
-dữ liệu; 153 cặp hiện tại không mở train chính. Chỉ đặt `data_locked=true`
-sau khi chốt N/bộ cuối và cập nhật hai config khớp N.
+preferences, M1/selection, hai config và `run_group`. Bộ cuối đã đặt
+`data_locked=true`, `expected_pairs=186`; hai config khớp N. Record dành
+cho Drive trỏ `preference_local/vivqax_m1_3683_v1/frozen`. Local vẫn dùng đường dẫn
+repo và profile local riêng, không mount Drive.
 Runtime mới khôi phục bundle ảnh vào ổ `/content` bằng verifier hiện có;
 record ghim đường dẫn/hash bundle. Ảnh của bộ cặp tiếp tục được đối chiếu
 trong preflight. Không đọc hàng nghìn JPEG trực tiếp từ Drive.
@@ -67,14 +68,14 @@ Kiểm cấu hình, không cần GPU/dữ liệu:
 python scripts/train_preference.py --config configs/training/sft_chosen.yaml --check-comparison
 ```
 
-Sau khi chốt N, cập nhật `expected_pairs` ở hai config chính rồi kiểm lại.
+Hai config đã chốt `expected_pairs=186`; CLI từ chối nếu khác N của study.
 Lệnh chạy M2 dùng config matched-LR, M3 dùng dpo; cả hai cần gate riêng.
 
 - M2 nạp **trọng số adapter M1**, không khởi tạo LoRA ngẫu nhiên mới.
 - M3 nạp hai bản adapter M1 trên cùng backbone 4-bit: policy trainable,
   reference frozen. Reference không phải model gốc tắt adapter.
 - Cả hai tắt dropout, cùng chosen và thứ tự dữ liệu, seed 42, một epoch,
-  batch 1 × tích lũy 8. Với 1.000 cặp: 125 optimizer update mỗi nhánh.
+  batch 1 × tích lũy 8. Với 186 cặp: 24 optimizer update mỗi nhánh.
 - DPO sigmoid dùng tổng log-prob của completion, mask prompt/ảnh; dùng ảnh ở
   chosen, rejected và reference. Không có reward model, rollout RL hoặc cache ref.
 - Giới hạn token là cổng từ chối, không cắt chuỗi. Quét collator thật một lần

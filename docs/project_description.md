@@ -59,8 +59,8 @@ tắt; M2/M3 cùng LR 5e-6, M3 beta 0,1. DPO giữ ảnh ở cả policy/referen
 kiểm hai completion trước train, không cắt input vượt 1.536 token.
 FP16 trên T4; BF16 khi GPU hỗ trợ native ở run mới. Lineage M1 giữ nguyên.
 
-N=1.000 là dự toán, chưa phải số đã có. Chốt N sạch trước train rồi cập nhật
-config chung. Cùng epoch không có nghĩa cùng token/FLOPs. M2 matched-LR
+N=186 đã khóa sau kiểm toàn pool và rút cặp yếu. Dự toán ban đầu là 1.000;
+không bù số bằng cặp mơ hồ. Một epoch tương ứng 24 update mỗi nhánh. Cùng epoch không có nghĩa cùng token/FLOPs. M2 matched-LR
 được chọn làm nhánh chính ngày 12/10 trước khi train; bản 2e-5 giữ làm lịch sử.
 
 ## Kết quả M0/M1
@@ -90,9 +90,11 @@ Run cuối: `runs/m1/sft-full_20261007_023531_870900`.
 
 M1-3683 sinh 2.000 ứng viên train-only, một câu/ảnh của pool seed 42. EM
 70,15% trên pool là thống kê ứng viên, không phải tỷ lệ cặp hợp lệ.
-Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 1.050 ảnh,
-bộ đang làm có 153 cặp: 61 rejected M1 nguyên văn và 92 có kiểm soát.
-34 câu ngoài phạm vi được tách chỉ từ câu hỏi; còn 916 pending trong pool đã khóa.
+Pilot 100 ảnh giữ nguyên: 12 giữ, 47 loại, 41 chưa chắc. Đã xử lý hết pool:
+xem 1.966 ảnh, tách 34 câu theo phạm vi; không còn pending. Rà lại 201 cặp
+ban đầu và rút 15 cặp yếu khỏi train. Bộ cuối có 186 cặp trên 186 ảnh,
+gồm 78 rejected M1 nguyên văn và 108 negative có kiểm soát. Tập nhỏ,
+được chọn lọc và thiên về lỗi object/attribute; phải báo giới hạn này.
 Các nhãn này do cùng một trợ lý AI kiểm thị giác, không phải nhãn người
 hoặc chấm mù. Nguồn actor và văn bản vẫn giữ trong metadata.
 

@@ -2,7 +2,7 @@
 stage: sft_chosen
 experiment_id: M2_SFT_CHOSEN
 seed: 42
-expected_pairs: 1000
+expected_pairs: 186
 learning_rate: 0.000005
 num_train_epochs: 1
 per_device_train_batch_size: 1

@@ -2,7 +2,7 @@
 stage: dpo
 experiment_id: M3_DPO
 seed: 42
-expected_pairs: 1000
+expected_pairs: 186
 # Requires a new output directory and the selected M1 adapter.
 learning_rate: 0.000005
 num_train_epochs: 1

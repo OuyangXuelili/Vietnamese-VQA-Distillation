@@ -6,11 +6,12 @@ checkpoint, log và kết quả chạy được lưu riêng. Trạng thái mới
 
 | Mục đích | Vị trí hiện hành |
 |---|---|
-| Kết quả duyệt cặp M1 | `preference_editor_m1_3683_2000_20261008/review_results_1050_20261014.html` |
+| Kết quả duyệt cặp M1 | `preference_editor_m1_3683_2000_20261008/review_results_final_20261014.html` |
 | Pilot 100 đã chốt | `../data/preferences/pilot_ai_20261012/decision_record.json` |
-| Bản dữ liệu tiếp tục — 1.050 ảnh, 153 giữ | `../data/preferences/review_batch_951_1050_20261014/reviewed_notes.jsonl` |
-| Bàn giao preference hiện hành | `../data/preferences/review_batch_951_1050_20261014/handoff/handoff.md` |
-| Kiểm tra lượt 751–1.050 | `preference_review_1050_20261014/` |
+| Notes toàn pool — 2.000 quyết định | `../data/preferences/review_complete_20261014/reviewed_notes.jsonl` |
+| Bộ train đã khóa — 186 cặp | `../data/preferences/vivqax_m1_3683_v1/README.md` |
+| Quyết định và danh sách cặp rút | `../data/preferences/vivqax_m1_3683_v1/decision_record.json`, `quality_review.json` |
+| Kiểm lượt cuối và toàn bộ cặp giữ | `preference_review_complete_20261014/` |
 | Nhận xét AI đã kiểm lại | `preference_ai_triage_m1_3683_pilot_20261012_qc/` |
 | Báo cáo quy mô pilot | `preference_ai_triage_m1_3683_pilot_20261012_qc/pilot_report/` |
 | Source đóng gói | `releases/source_<UTC>/` |

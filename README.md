@@ -13,10 +13,10 @@ bài toán, dữ liệu và kết quả.
 - M1 đã học một epoch, chọn checkpoint-3683 bằng loss trên 256 validation.
   Đánh giá đủ 1.407 validation: EM 70,93%, Token-F1 75,11%, ROUGE-L 44,29%,
   BERTScore 82,47%. [Bảng điểm và CI](reports/generated/m0_m1_validation_20261011/README.md).
-- Pilot 100 đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Đã kiểm 1.050 ảnh,
-  giữ 153 cặp; tách 34 câu ngoài phạm vi chỉ từ câu hỏi, còn 916 pending.
-  [Kết quả hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/review_results_1050_20261014.html).
-  Nguồn duyệt giữ trong metadata; chưa có nhãn người hoặc bộ train cuối.
+- Đã xử lý hết 2.000 ứng viên: xem 1.966 ảnh, tách 34 câu theo phạm vi.
+  Kiểm lại 201 cặp giữ, rút 15 cặp yếu; khóa **186 cặp / 186 ảnh train**.
+  [Bộ dùng train](artifacts/preference_editor_m1_3683_2000_20261008/review_results_final_20261014.html).
+  Có 78 rejected M1 nguyên văn và 108 negative có kiểm soát; không phải nhãn người.
 - Trainer M2/M3 đã kiểm local; chưa train GPU. Demo replay đã có,
   live chưa nghiệm thu GPU. Chưa có kết quả test cuối.
 - Bàn giao bản duyệt: `scripts/finalize_preference_review.py` audit/lưu snapshot;
@@ -75,8 +75,8 @@ Checkout mới: xem [dữ liệu](docs/data_protocol.md) và
 
 ## Việc tiếp theo
 
-1. Duyệt phần còn lại của pool đã có và chốt N: [gán nhãn](docs/preference_annotation.md).
-2. Export/freeze bộ cặp chung, kiểm GPU rồi train: [M2/M3](docs/preference_training.md).
+1. Khôi phục bộ đã khóa, kiểm đầu vào thật và token trên GPU.
+2. Gate riêng rồi train M2/M3 từ M1 sạch: [hướng dẫn](docs/preference_training.md).
 3. Validation/test, chấm theo ảnh: [giao thức](docs/experiment_protocol.md),
    [chấm mù](docs/human_evaluation.md).
 4. Hoàn thiện [demo](docs/demo.md), phân tích và báo cáo.

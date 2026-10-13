@@ -16,18 +16,37 @@ from vqa_explanation.training.preference_data import (
 @pytest.mark.parametrize("name", ["sft_chosen", "dpo"])
 def test_stage_configs_match_protocol(name):
     cfg = load_config(f"configs/training/{name}.yaml")
-    assert cfg["expected_pairs"] == 1000
+    study = yaml.safe_load(open("configs/experiments/study_budget_v2.yaml", encoding="utf-8"))
+    assert cfg["expected_pairs"] == study["preferences"]["locked_pairs"] == 186
     assert cfg["gradient_accumulation_steps"] == 8
     assert cfg["dtype"] == "auto"
 
 
-def test_main_matched_lr_preserves_the_earlier_sft_plan_except_lr():
+def test_main_plan_changes_only_lr_and_locked_pair_count():
     earlier = load_config("configs/archive/sft_chosen_lr2e5.yaml")
     matched = load_config("configs/training/sft_chosen.yaml")
     dpo = load_config("configs/training/dpo.yaml")
     assert earlier.keys() == matched.keys()
-    assert {key for key in earlier if earlier[key] != matched[key]} == {"learning_rate"}
+    assert {key for key in earlier if earlier[key] != matched[key]} == {
+        "learning_rate", "expected_pairs"
+    }
     assert matched["learning_rate"] == dpo["learning_rate"] == 0.000005
+
+
+@pytest.mark.parametrize("locked_pairs", [None, True, 0, 185])
+def test_locked_study_rejects_missing_or_different_pair_count(tmp_path, locked_pairs):
+    from pathlib import Path
+
+    from vqa_explanation.training.preference_data import validate_study_arm
+
+    study = yaml.safe_load(
+        Path("configs/experiments/study_budget_v2.yaml").read_text(encoding="utf-8")
+    )
+    study["preferences"]["locked_pairs"] = locked_pairs
+    path = tmp_path / "study.yaml"
+    path.write_text(yaml.safe_dump(study), encoding="utf-8")
+    with pytest.raises(ValueError, match="locked_pairs|expected_pairs"):
+        validate_study_arm("configs/training/sft_chosen.yaml", path)
 
 
 def test_declared_main_comparison_and_experiment_point_to_matched_sft():

@@ -17,10 +17,10 @@ pháp, nhưng không suy từ đó ra điểm hoặc chuẩn chấm của trư�
 
 | Phần | Đã xong | Còn lại |
 |---|---|---|
-| Dữ liệu | ViVQA-X `image_disjoint_v1`: 29.459 train, 1.407 validation, 1.968 test; đã tách ảnh | Xác nhận chất lượng cặp mới |
+| Dữ liệu | ViVQA-X `image_disjoint_v1`: 29.459 train, 1.407 validation, 1.968 test; đã tách ảnh | Giữ nguyên split |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683; đủ validation M0/M1 | Đánh giá test sau khi khóa thiết kế |
-| Preference | Pilot đã chốt; kiểm 1.050 ảnh, giữ 153 cặp; tách 34 câu theo phạm vi | Duyệt 916 pending, khóa N trước train |
-| M2/M3 | Trainer, resume và kiểm thử local | Bundle đã đóng băng, GPU gate, train thật |
+| Preference | Xử lý hết 2.000 ứng viên; khóa 186 cặp sau kiểm cuối | Khôi phục bundle thật trên cloud |
+| M2/M3 | Trainer/resume local, bộ cặp đã đóng băng | GPU gate và train thật |
 | Đánh giá cuối | Scorer và mẫu cố định 200 ảnh test | Prediction bốn nhánh và nhãn chấm |
 | Demo | Replay M1 và backend live đã viết | Nghiệm thu suy luận ảnh mới trên GPU |
 
@@ -29,86 +29,37 @@ Kết quả M0/M1: [báo cáo validation](../reports/generated/m0_m1_validation_
 Tên protocol chọn M1 là `validation_loss_full_validation_v2`: loss được đo
 trên 256 câu cố định, còn prediction được kiểm trên đủ 1.407 validation.
 
-## 1. Chốt pilot và bộ cặp
+## 1. Bộ cặp đã khóa
 
-Mở [kết quả duyệt](../artifacts/preference_editor_m1_3683_2000_20261008/review_results_1050_20261014.html).
-Theo quyền người thực hiện giao ngày 12/10, pilot đã chốt bằng kiểm thị giác
-AI: 12 giữ, 47 loại, 41 chưa chắc. Rút cặp `311428001` vì câu hỏi số nhiều
-không xác định rõ người. Đã kiểm tiếp 950 ảnh ngoài pilot.
-Hiện có 153 cặp: 61 rejected M1 nguyên văn và 92 negative có kiểm soát.
-Đây là dữ liệu preference do AI gán nhãn, không phải nhãn người/chấm mù.
+[Bộ dùng train](../artifacts/preference_editor_m1_3683_2000_20261008/review_results_final_20261014.html)
+gồm 186 cặp trên 186 ảnh train. Hồ sơ:
+`data/preferences/vivqax_m1_3683_v1/decision_record.json`; đầu vào ở
+`frozen/accepted.jsonl`, `chosen_only.jsonl` và `manifest.json`.
 
-Đổi chính sách duyệt từ nháp chờ người sang `ai_visual_review_v1` trước
-train M2/M3. Trường actor và nguồn văn bản giữ trong metadata; giao diện
-chỉ hiển thị kết quả theo yêu cầu. Không đổi split, M1, LR hoặc test.
-Phản hồi AI và negative tổng hợp có tiền lệ trong
+Đã xử lý hết pool 2.000 ứng viên: xem 1.966 ảnh, tách 34 câu theo phạm vi.
+Notes có 201 giữ / 1.106 loại / 693 chưa chắc, không còn pending.
+Rà lại toàn bộ 201 cặp và rút 15 cặp chưa có đối lập chắc chắn khỏi bản
+train. `quality_review.json` ghi từng ID/lý do; không sửa pilot hoặc notes cũ.
+Lịch sử từng lượt và bản nháp giữ tại [TIEN_DO.md](../TIEN_DO.md).
+
+Bộ cuối có 78 rejected M1 nguyên văn và 108 negative có kiểm soát.
+Chosen và quyết định do cùng trợ lý AI tạo/kiểm; không phải nhiều người
+độc lập hoặc nhãn người. Giao diện chỉ hiện kết quả, metadata giữ nguồn.
+Phần chấm mù 200 ảnh test bởi người vẫn giữ nguyên.
+
+N=186 thay dự toán 1.000 trước khi train M2/M3 hoặc xem test. Không tạo
+cặp yếu để đủ quota; không tăng số mẫu bằng lặp dữ liệu. Đây là tập
+preference nhỏ và được chọn lọc, nhiều đối chứng object/attribute dễ.
+Kết luận phải giới hạn trong bộ này, không suy rộng toàn ViVQA-X hay
+backbone khác. Báo nguồn model/synthetic riêng; kiểm độ dài để xem
+shortcut. Không gọi toàn bộ nhóm model là bịa đối tượng.
+
+Quy tắc cặp: cùng ảnh/câu hỏi/đáp án đúng, chosen hỗ trợ đáp án và rejected
+có vấn đề xác định được theo ảnh. Không dùng câu mơ hồ, hai phía đều đúng
+hoặc chỉ khác văn phong. Tham chiếu nghi sai được loại, không sửa canonical.
+Phản hồi AI và negative tổng hợp có tiền lệ ở
 [RLAIF-V](https://arxiv.org/abs/2405.17220) và
-[POVID](https://arxiv.org/abs/2402.11411). Đồ án không tái hiện nguyên các
-pipeline này hoặc lấy kết quả của họ làm bảo đảm cho nhãn hiện tại.
-
-1. Pilot đã hoàn tất; hồ sơ ở `data/preferences/pilot_ai_20261012`.
-   Không duyệt lại cùng 100 câu để tạo vòng kiểm hành chính mới.
-2. Chạy `scripts/finalize_preference_review.py` trên JSONL đã xuất để audit,
-   lưu snapshot và báo phần còn thiếu. Báo nguồn rejected nguyên văn M1, manual và
-   synthetic riêng; chỉ dùng nhóm nguyên văn để dự toán pool lỗi tự nhiên.
-3. Chốt công duyệt, phạm vi chọn mẫu và N trước train. 1.000 là dự toán,
-   không phải quota bắt buộc. Nếu nguồn sạch quá ít, bàn lại phạm vi; không
-   tạo lỗi yếu hoặc hạ chuẩn để đủ số.
-4. Mở rộng theo thứ tự pool đã khóa, mỗi lượt 100 câu. Bản tiếp tục ở
-   `data/preferences/review_batch_951_1050_20261014/reviewed_notes.jsonl`;
-   còn 916 pending. Đã xem ảnh: 1.050; tách theo câu hỏi: 34, không chấm M1
-   hoặc ghi bằng chứng ảnh cho nhóm này. Câu đã xử lý nhưng không dùng giữ
-   rejected/uncertain và lý do. Không sinh lại 2.000 ứng viên.
-   Dùng chế độ `--freeze --expected-pairs N` để export subset accepted rồi
-   validate/freeze thành `accepted.jsonl`,
-   `chosen_only.jsonl` và `manifest.json`.
-
-Điều kiện xong: N cặp cùng ảnh/câu hỏi/đáp án đúng, khác giải thích, có bằng
-chứng ảnh và nguồn văn bản; M2/M3 dùng đúng cùng ID/chosen. Cặp mơ hồ, sai
-đáp án hoặc chỉ khác văn phong không dùng cho thí nghiệm giải thích.
-Các nhãn tham chiếu nghi sai được ghi lý do loại, không sửa canonical giữa run.
-
-Pilot thu 8/100 cặp có rejected M1 nguyên văn. Vì vậy không thể mặc định
-pool 2.000 sẽ cho 1.000 lỗi tự nhiên. Chốt N từ cặp thực tế sau mở rộng;
-153 cặp hiện tại chỉ là bộ đang làm, chưa mở run chính. Báo nguồn tự nhiên
-và tổng hợp riêng, cùng rủi ro thiên lệch do một trợ lý gán nhãn. Phần chấm
-mù 200 ảnh test bởi người ở bước 3 vẫn giữ nguyên, không thay bằng AI.
-
-Lượt 151–250 khóa danh sách và quy tắc trước duyệt: tối đa 10 negative
-có kiểm soát, lấy trường hợp hợp lệ đầu tiên theo thứ tự. Chỉ đổi một
-chi tiết nhìn rõ, giữ đáp án và cấu trúc hai phía tương đương. Rà lại rút
-hai cặp yếu; lượt này giữ 5 negative M1 và 9 negative tổng hợp, không bù
-cho đủ quota. Chấm giải thích M1 gốc riêng, không chấm negative tạo mới
-thành lỗi của M1. Cặp đổi thuộc tính thường dễ; báo giới hạn này khi phân tích.
-
-Lượt 251–350 dùng 100 ID pending kế tiếp đã khóa trong `continuation.json`
-của lượt trước. Giữ 17 cặp: 7 negative M1 nguyên văn và 10 có kiểm soát;
-49 câu loại, 34 chưa chắc. Xem cả 100 ảnh qua bảng ảnh, mở lại ảnh gốc cho
-cặp giữ. Không đổi quyết định ngoài lượt này hoặc pilot. Mốc 200 cặp chỉ
-để dự toán công duyệt, không phải ngưỡng bảo đảm chất lượng. Hoàn tất phạm
-vi pool đã khóa rồi quyết định N theo dữ liệu thực, trước khi train/test.
-
-Lượt 351–450 giữ 15 cặp sau rà ảnh gốc và văn bản M1: 6 negative nguyên
-văn, 9 có kiểm soát; 58 loại, 27 chưa chắc. Không sửa pilot hay quyết định
-cũ. Audit nguồn và trường dữ liệu không thay thế kiểm thị giác.
-
-Lượt 451–550 giữ 16 cặp: 6 negative M1 và 10 có kiểm soát, sau khi xem
-lại toàn bộ ảnh của cặp giữ ở độ phân giải gốc. 47 loại, 37 chưa chắc.
-Giữ riêng nguồn synthetic/model và không đổi quyết định ngoài lượt.
-
-Lượt 551–650 giữ 16 cặp: 6 negative M1 và 10 có kiểm soát; 56 loại,
-28 chưa chắc. Xem lại ảnh gốc của toàn bộ cặp giữ, gồm lỗi vị trí logo,
-nhầm người cầm ô và nhầm cà vạt với dây chuyền. Pilot và nhãn cũ không đổi.
-
-Lượt 651–750 giữ 15 cặp: 5 negative M1 và 10 có kiểm soát; 54 loại,
-31 chưa chắc. Rà lại toàn bộ ảnh gốc của cặp giữ, sửa một đối lập quá
-phi thực tế trước công bố. Giữ bản nháp; không đổi nhãn các lượt trước.
-
-Ngày 14/10 xử lý liền ba lượt 751–1.050: thêm 43 cặp, gồm 13 rejected M1
-nguyên văn và 30 có kiểm soát; 130 loại, 127 chưa chắc. Xem đủ 300 ảnh,
-mở lại ảnh gốc cho toàn bộ cặp giữ. Hai đối chứng được rút về một thuộc
-tính trước công bố; bản nháp vẫn giữ. Kiểm repo và đồng bộ sau cả đợt,
-không lặp smoke/GPU setup giữa các nhóm. Không đổi nhãn 750 ảnh trước.
+[POVID](https://arxiv.org/abs/2402.11411); dự án không tái hiện các pipeline đó.
 
 ## 2. Kiểm GPU rồi train M2/M3
 
@@ -123,14 +74,14 @@ Không train lại M1 hoặc sinh lại 2.000 ứng viên.
 Cả hai tắt dropout, giữ cùng seed 42, preprocessing và template. DPO có ảnh
 ở policy/reference và loss chỉ trên completion; không dùng reference là
 backbone đã tắt adapter. Giới hạn 1.536 token là cổng từ chối, không cắt ảnh
-hoặc bỏ riêng mẫu dài cho một nhánh. N=1.000 tương ứng 125 update.
+hoặc bỏ riêng mẫu dài cho một nhánh. N=186 tương ứng 24 update mỗi nhánh.
 
 Protocol `vqa_nle_matched_lr_v2` chốt ngày 12/10 trước khi M2/M3 chạy GPU.
 M2 chính dùng `configs/training/sft_chosen.yaml`; bản 2e-5 giữ trong
 `configs/archive/sft_chosen_lr2e5.yaml`. CLI kiểm cả hai cấu hình và lưu
 protocol/hash vào run; đổi một nhánh phải khai báo protocol mới trước train.
 
-1. Chốt `expected_pairs=N` cho mọi config sẽ chạy; kiểm bundle/M1/hash.
+1. Hai config đã chốt `expected_pairs=186`; kiểm bundle/M1/hash trên runtime thật.
 2. Mỗi trainer kiểm GPU tối đa 10 update, một lượt khi đầu vào/source chưa
    đổi: loss hữu hạn, policy đổi, reference giữ nguyên, save/reload và resume.
 3. Đo giây/update, VRAM, lưu checkpoint; dự toán DPO trên 8 giờ thì xem lại

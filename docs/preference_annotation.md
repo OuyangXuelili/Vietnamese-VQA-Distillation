@@ -2,11 +2,14 @@
 
 Cập nhật 14/10/2026. Bộ chính là 2.000 ứng viên từ M1-3683, train-only.
 Pilot 100 ảnh đã chốt theo quyền người thực hiện giao: 12 giữ, 47 loại,
-41 chưa chắc. Đã xem 1.050 ảnh, giữ 153 cặp; tách riêng 34 câu theo phạm vi.
-Full notes: 153 accepted / 522 rejected / 409 uncertain / 916 pending.
+41 chưa chắc. Đã xử lý hết pool: xem 1.966 ảnh, tách 34 câu theo phạm vi.
+Notes: 201 accepted / 1.106 rejected / 693 uncertain / 0 pending.
+Rà toàn bộ cặp giữ và rút 15 khỏi bản train; khóa 186 cặp / 186 ảnh.
+Bộ cuối ở `data/preferences/vivqax_m1_3683_v1/frozen`; `quality_review.json`
+ghi riêng các cặp rút. Pilot, notes và các snapshot lịch sử không đổi.
 
 Trang dùng hiện tại:
-`artifacts/preference_editor_m1_3683_2000_20261008/review_results_1050_20261014.html`.
+`artifacts/preference_editor_m1_3683_2000_20261008/review_results_final_20261014.html`.
 Trang chỉ hiển thị kết quả và lý do. Loại người/AI duyệt vẫn giữ trong
 JSONL và manifest để không lẫn nguồn nhãn. Trang nháp cũ được giữ nguyên.
 Các trang checkpoint-800 và bản nháp trước giữ làm lịch sử, không chạy lại.
@@ -49,8 +52,9 @@ không tự xác nhận. Khi tự sửa, kiểm lại nguồn và recipe, không
 Bộ pilot chỉ hiển thị 100 câu nhưng xuất đủ 2.000 dòng, giữ nhãn ngoài pilot.
 Nháp lịch sử ở `artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc/ai_prefill`.
 Bản chốt pilot ở `data/preferences/pilot_ai_20261012`; bản tiếp tục ở
-`data/preferences/review_batch_951_1050_20261014`. Lượt chốt xem lại 13 cặp và rút
-một câu mơ hồ; các lượt mở rộng đã xem 950 ảnh ngoài pilot. Đây là kiểm
+`data/preferences/review_complete_20261014`. Lượt cuối thêm 916 ảnh và 48 cặp;
+đã xem đủ 1.866 ảnh ngoài pilot. Bản train sau lọc ở
+`data/preferences/vivqax_m1_3683_v1`; 78 model / 108 synthetic. Đây là kiểm
 của cùng trợ lý AI, không phải nhiều người độc lập hoặc chấm mù.
 
 Chính sách `ai_visual_review_v1` cho phép dùng quyết định AI đã xem ảnh,
@@ -105,7 +109,7 @@ Hai đối chứng cuối được đơn giản hóa, chỉ khác độ sạch s
 bản nháp nằm trong `artifacts/preference_review_1050_20261014/initial_publish`.
 Không giữ cặp từ câu dịch mơ hồ, trạng thái ẩn hoặc đổi chỉ văn phong.
 Một rejected M1 có thể thiếu liên quan dù chi tiết là đúng; không gọi
-mọi cặp model là bịa đối tượng. Chưa có nhãn người hoặc bundle train chính.
+mọi cặp model là bịa đối tượng. Bộ train cuối đã khóa; chưa có nhãn người.
 
 34 câu về ý định, sở thích hoặc tác động sức khỏe được tách chỉ từ câu hỏi.
 Nhóm này để uncertain, `image_evidence=null`, `explanation_support=null`;
@@ -150,8 +154,8 @@ tạo bộ train; exit 2 khi yêu cầu freeze bị chặn, exit 1 khi nguồn/n
 Kiểm hai config, M1 selection và GPU theo `preference_training.md` sau đó.
 Các lệnh riêng dưới đây vẫn dùng được khi cần kiểm từng phần.
 
-Ví dụ dưới dành cho bộ cuối sau khi mở rộng và chốt N, không phải lệnh
-train 153 cặp hiện tại. Dùng output version mới nếu đã tồn tại.
+Ví dụ dưới là các bước công cụ riêng, không cần chạy lại bản đã khóa.
+Nếu tạo phiên bản khác, dùng output mới; không ghi đè bundle hiện hành.
 
 ```powershell
 $reviewDir = 'artifacts/preference_editor_m1_3683_2000_20261008'
@@ -159,7 +163,7 @@ $reviewNotes = 'data/preferences/reviewed_notes.jsonl'
 $reviewPilot = "$reviewDir/pilot_review_100.json"
 
 python scripts/audit_preference_review.py --review-dir $reviewDir --notes $reviewNotes --pilot $reviewPilot
-python scripts/summarize_preference_pilot.py --review-dir $reviewDir --notes $reviewNotes --pilot $reviewPilot --triage artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc/release/triage.jsonl --output-dir artifacts/preference_pilot_report_reviewed_v1 --target-pairs 1000
+python scripts/summarize_preference_pilot.py --review-dir $reviewDir --notes $reviewNotes --pilot $reviewPilot --triage artifacts/preference_ai_triage_m1_3683_pilot_20261012_qc/release/triage.jsonl --output-dir <THU_MUC_BAO_CAO_MOI> --target-pairs 186
 
 python scripts/export_preference_review.py --bundle artifacts/colab_history/20261008/preference_candidates_completed/review_2000.zip --expected-sha256 365f080096f964a4a1d670faa7192a62697f45fb92f0480cdd555c7319b8af45 --notes $reviewNotes --annotations data/processed/vivqax/image_disjoint_v1/all.jsonl --image-root data/raw/coco --output-dir data/preferences/export_v1
 python scripts/validate_preferences.py --input data/preferences/export_v1/reviewed_pairs.jsonl --annotations data/processed/vivqax/image_disjoint_v1/all.jsonl --image-root data/raw/coco --output-dir data/preferences/frozen_v1

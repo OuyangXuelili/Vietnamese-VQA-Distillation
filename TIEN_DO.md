@@ -9,14 +9,61 @@ Cập nhật: 14/10/2026.
 | Dữ liệu | ViVQA-X `image_disjoint_v1`, 29.459 train / 1.407 validation / 1.968 test; 28.180 ảnh đã kiểm local và bundle cloud |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
 | Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
-| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 1.050 ảnh, giữ 153 cặp; tách 34 câu theo phạm vi. Full notes: 153 giữ / 522 loại / 409 chưa chắc / 916 pending |
-| M2/M3 | Trainer/resume đã kiểm local; có CLI bàn giao review → freeze; chưa train GPU |
+| Cặp ưu tiên | Hết 2.000 ứng viên: 1.966 ảnh đã xem, 34 câu tách theo phạm vi, 0 pending. Khóa 186 cặp sau rút 15 cặp yếu; pilot/notes cũ không đổi |
+| M2/M3 | Bộ cuối cùng ID/chosen, hai config N=186; trainer/resume đã kiểm local; chưa train GPU |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
 
 Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
+
+## 14/10 — hoàn tất pool và khóa bộ train
+
+- Xử lý 916 ID còn lại theo selection đã lưu trước khi xem: thêm 48 cặp,
+  584 loại, 284 chưa chắc. Đã xem đủ 1.966 ảnh; 34 câu tách theo phạm vi.
+  Full notes 201 giữ / 1.106 loại / 693 chưa chắc / 0 pending.
+- Rà toàn bộ 201 cặp trên 26 bảng ảnh, mở lại ảnh gốc khi cần. Rút 15 cặp
+  yếu khỏi export train; không sửa quyết định pilot hay notes lịch sử.
+  Lý do từng ID ở `data/preferences/vivqax_m1_3683_v1/quality_review.json`.
+  Một nháp bị lỗi cụm rejected đã giữ ở `attempt_01`; sửa/rút trước công bố.
+- Khóa `data/preferences/vivqax_m1_3683_v1/frozen`: 186 cặp / 186 ảnh,
+  78 rejected M1 nguyên văn và 108 negative có kiểm soát. M2/M3 có đúng
+  cùng ID/chosen; validator kiểm canonical, nguồn, hash ảnh và train-only.
+  Đây là tập preference nhỏ do cùng trợ lý kiểm, không phải nhãn người.
+- Hai config và study chốt N=186 trước train/test; giữ LR 5e-6, seed 42,
+  epoch 1, M1-3683. Dự kiến 24 optimizer update/nhánh. Thêm kiểm từ chối
+  config khác N đã khóa. Không tạo notebook hoặc train lại M1.
+- Trang hiện hành `review_results_final_20261014.html`; lịch sử 1.050 và
+  1.966 ảnh giữ nguyên. Kế hoạch hiện hành rút gọn, không lặp nhật ký từng lượt.
+- `check_project.py --full-data` qua Ruff và 914 test không skip; audit
+  đủ 32.834 dòng, preflight 29.459 train. Run `audit_20261013_190756_222601`
+  và `preflight_20261013_190832_479387`; 26 warning PEFT từ fixture.
+  Kiểm riêng bộ cuối: 0 ảnh validation/test, cùng 186 ID/chosen, nguồn
+  model khớp M1-3683, recipe synthetic đúng hash; 304 file lịch sử không đổi.
+- Độ dài trung bình chosen/rejected 10,34/9,28 từ (không phải token).
+  Chosen dài hơn 80 cặp, ngắn hơn 28, bằng nhau 78; báo rủi ro học độ dài.
+- Gói nhãn 112 file, chỉ metadata, SHA-256
+  `ad6ce32a0de7051ad82e9d06d7acf21a2ebfd692c547c608bec4374c0eaf5392`.
+  Đã tải lại ZIP và notes từ Drive, khớp local. Notes v9; handoff md/json v10.
+- Drive `preference_local/vivqax_m1_3683_v1/frozen` có đủ ba file đầu vào;
+  tải lại cả ba khớp byte. Hồ sơ quyết định/quality review đặt cùng phiên bản.
+  Source 238 file `source_20261013_191411_197153` tải lại và kiểm từng member,
+  SHA-256 `bf29279ab7e179880e4b8b72638c4eab0be47aa961246a9697073d7837dd2ed2`.
+- Record launch v10 ghim source mới, N=186 và đúng đường dẫn bộ cuối.
+  Tài liệu cập nhật trên file Drive cũ; tải lại cả bốn khớp local. Notebook 04
+  cập nhật cùng file, tải lại khớp; chỉ sửa mô tả, giữ 7 cell và output M1 cũ.
+  Không tạo notebook mới hoặc source release thứ hai để đổi nhật ký upload.
+- Trong kiểm tải ZIP, điều khiển theo index đã phát sinh một bản sao.
+  Đã đổi tên `audit_download_copy_20261014.zip`, không dùng train. Hủy
+  di chuyển khi Drive hỏi đổi người có quyền; không đổi chia sẻ hoặc xóa file.
+  Chuyển sang thao tác bằng nhãn/phím của Drive; gói chuẩn đã tải lại khớp.
+- Trang cuối được kiểm trên trình duyệt: 186 cặp, 15 lý do rút; chỉ hiện
+  kết quả. Bằng chứng, checksum tải lại và Git ở
+  `artifacts/preference_review_complete_20261014/sync/receipt.json`.
+- Bước kế: notebook 04 kiểm input thật/token trên runtime GPU, gate 5 update
+  mỗi nhánh; nạp lại M1 sạch rồi train M2/M3 một epoch. M2/M3 chưa train GPU,
+  chưa có bằng chứng chất lượng tăng. Giữ phần chấm mù test bởi người.
 
 ## 14/10 — duyệt liền 300 ảnh, lượt 751–1.050
 

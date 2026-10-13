@@ -144,6 +144,12 @@ def validate_study_arm(config_path, study_path):
         "learning_rate": training.get("learning_rate"),
         "checkpoint_selection": training.get("checkpoint_selection"),
     }
+    preferences = study.get("preferences", {})
+    if preferences.get("data_locked") is True:
+        locked_pairs = preferences.get("locked_pairs")
+        if type(locked_pairs) is not int or locked_pairs <= 0:
+            raise ValueError("Locked study requires a positive locked_pairs")
+        declared["expected_pairs"] = locked_pairs
     for field, value in declared.items():
         if value is None or sft[field] != value:
             raise ValueError(f"Config differs from study: {field}")
