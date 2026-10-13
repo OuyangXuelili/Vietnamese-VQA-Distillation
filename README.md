@@ -13,9 +13,9 @@ bài toán, dữ liệu và kết quả.
 - M1 đã học một epoch, chọn checkpoint-3683 bằng loss trên 256 validation.
   Đánh giá đủ 1.407 validation: EM 70,93%, Token-F1 75,11%, ROUGE-L 44,29%,
   BERTScore 82,47%. [Bảng điểm và CI](reports/generated/m0_m1_validation_20261011/README.md).
-- Pilot 100 đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Đã kiểm 250 ảnh,
-  giữ 31 cặp; tách 34 câu ngoài phạm vi chỉ từ câu hỏi, còn 1.716 pending.
-  [Kết quả hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/review_results_250_20261013.html).
+- Pilot 100 đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Đã kiểm 350 ảnh,
+  giữ 48 cặp; tách 34 câu ngoài phạm vi chỉ từ câu hỏi, còn 1.616 pending.
+  [Kết quả hiện hành](artifacts/preference_editor_m1_3683_2000_20261008/review_results_350_20261013.html).
   Nguồn duyệt giữ trong metadata; chưa có nhãn người hoặc bộ train cuối.
 - Trainer M2/M3 đã kiểm local; chưa train GPU. Demo replay đã có,
   live chưa nghiệm thu GPU. Chưa có kết quả test cuối.

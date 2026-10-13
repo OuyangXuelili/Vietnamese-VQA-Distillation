@@ -90,8 +90,9 @@ Run cuối: `runs/m1/sft-full_20261007_023531_870900`.
 
 M1-3683 sinh 2.000 ứng viên train-only, một câu/ảnh của pool seed 42. EM
 70,15% trên pool là thống kê ứng viên, không phải tỷ lệ cặp hợp lệ.
-Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 250 ảnh,
-bộ đang làm có 31 cặp; 34 câu ngoài phạm vi được tách chỉ từ câu hỏi.
+Pilot 100 ảnh đã chốt: 12 giữ, 47 loại, 41 chưa chắc. Sau khi xem 350 ảnh,
+bộ đang làm có 48 cặp: 25 negative M1 và 23 có kiểm soát. 34 câu ngoài
+phạm vi được tách chỉ từ câu hỏi; còn 1.616 pending trong pool đã khóa.
 Các nhãn này do cùng một trợ lý AI kiểm thị giác, không phải nhãn người
 hoặc chấm mù. Nguồn actor và văn bản vẫn giữ trong metadata.
 
@@ -117,7 +118,7 @@ Trang duyệt cặp không phải demo. Source dùng lại ở `src`; notebook 0
 Đóng góp dự kiến: bộ cặp tiếng Việt có truy vết, đối chứng chosen-SFT/DPO và
 phân tích lỗi theo ảnh. Qwen/LoRA/DPO là phương pháp kế thừa.
 Giới hạn: một seed train, annotation dịch, cỡ mẫu chấm hữu hạn, pretraining
-overlap chưa biết, LR/chi phí tính khác nhau. DPO không vượt SFT vẫn là kết
+overlap chưa biết, chi phí tính khác nhau dù cùng LR/epoch. DPO không vượt SFT vẫn là kết
 quả cần báo cáo. Thời gian còn lại chốt từ pilot và số đo GPU, không từ số
 file hoặc loss giảm.
 

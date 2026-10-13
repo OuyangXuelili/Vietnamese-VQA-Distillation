@@ -6,10 +6,10 @@ checkpoint, log và kết quả chạy được lưu riêng. Trạng thái mới
 
 | Mục đích | Vị trí hiện hành |
 |---|---|
-| Kết quả duyệt cặp M1 | `preference_editor_m1_3683_2000_20261008/review_results_250_20261013.html` |
+| Kết quả duyệt cặp M1 | `preference_editor_m1_3683_2000_20261008/review_results_350_20261013.html` |
 | Pilot 100 đã chốt | `../data/preferences/pilot_ai_20261012/decision_record.json` |
-| Bản dữ liệu tiếp tục — 250 ảnh, 31 giữ | `../data/preferences/review_batch_151_250_20261013/reviewed_notes.jsonl` |
-| Bàn giao preference hiện hành | `../data/preferences/review_batch_151_250_20261013/handoff/handoff.md` |
+| Bản dữ liệu tiếp tục — 350 ảnh, 48 giữ | `../data/preferences/review_batch_251_350_20261013/reviewed_notes.jsonl` |
+| Bàn giao preference hiện hành | `../data/preferences/review_batch_251_350_20261013/handoff/handoff.md` |
 | Nhận xét AI đã kiểm lại | `preference_ai_triage_m1_3683_pilot_20261012_qc/` |
 | Báo cáo quy mô pilot | `preference_ai_triage_m1_3683_pilot_20261012_qc/pilot_report/` |
 | Source đóng gói | `releases/source_<UTC>/` |

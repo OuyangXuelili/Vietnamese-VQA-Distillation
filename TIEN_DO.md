@@ -9,7 +9,7 @@ Cập nhật: 13/10/2026.
 | Dữ liệu | ViVQA-X `image_disjoint_v1`, 29.459 train / 1.407 validation / 1.968 test; 28.180 ảnh đã kiểm local và bundle cloud |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
 | Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
-| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 250 ảnh, giữ 31 cặp; tách 34 câu theo phạm vi. Full notes: 31 giữ / 128 loại / 125 chưa chắc / 1.716 pending |
+| Cặp ưu tiên | Pilot 100 không đổi. Đã xem 350 ảnh, giữ 48 cặp; tách 34 câu theo phạm vi. Full notes: 48 giữ / 177 loại / 159 chưa chắc / 1.616 pending |
 | M2/M3 | Trainer/resume đã kiểm local; có CLI bàn giao review → freeze; chưa train GPU |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
@@ -17,6 +17,47 @@ Cập nhật: 13/10/2026.
 Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
+
+## 13/10 — tiếp tục duyệt 100 ảnh
+
+- Dùng đúng 100 ID pending đã khóa ở lượt trước. Xem cả lượt qua bảng ảnh,
+  mở lại ảnh gốc cho các cặp giữ. Giữ 17 cặp: 7 negative M1 nguyên văn,
+  10 có kiểm soát; 49 câu loại, 34 chưa chắc. Không sửa pilot hoặc nhãn
+  ngoài lượt này. Một cặp về râu được để uncertain vì chi tiết không rõ.
+- Bản hiện hành: `data/preferences/review_batch_251_350_20261013`.
+  Audit đủ 2.000 dòng qua; bộ metadata có 48 cặp, cùng ID/chosen M2/M3.
+  Tổng nguồn rejected: 25 model / 23 synthetic. Chosen dài hơn rejected
+  ở 23/48 cặp, đếm từ theo khoảng trắng, chưa phải thống kê token Qwen.
+- Trang kết quả: `review_results_350_20261013.html`, chỉ hiển thị kết quả;
+  actor/nguồn/recipe vẫn giữ trong dữ liệu. 0 cặp xác nhận bởi người;
+  cổng dữ liệu train chính vẫn đóng. Không train lại M1, tạo notebook
+  mới hoặc ghi đè output lịch sử.
+- `continuation.json` khóa 100 ID pending tiếp theo. 200 là mốc dự toán,
+  không phải ngưỡng chất lượng; N cuối quyết định từ phạm vi đã duyệt.
+  Kế hoạch và pointer study đã cập nhật, giữ LR/epoch/test như trước.
+- `check_project.py --full-data` qua Ruff và 910 test, không skip;
+  audit 32.834 bản ghi không lỗi/trùng ảnh giữa split, preflight đủ ảnh
+  cho 29.459 câu train. Log: `artifacts/preference_review_350_20261013/check_project.log`.
+  Run audit `audit_20261013_110108_289172`, preflight
+  `preflight_20261013_110148_219422`. 26 warning từ fixture PEFT.
+- Drive `preference_local` đã nhận gói 34 file, không có ảnh/weights;
+  tải lại ZIP khớp SHA-256
+  `05cc8956d53bea722fa246811ab57358e2f0cb79f77c27326f26a41f830dc812`.
+  `reviewed_notes.jsonl` cập nhật cùng file lên phiên bản 3; hai handoff
+  lên phiên bản 4. Bản notes tải lại khớp local.
+- Source cuối `source_20261013_111553_904173` gồm 238 file, tải lại khớp
+  SHA-256 `2910d49c59968af508ad3ba7606682c784474c6c51d8a905b4aef8f8457c7980`.
+  Bản 110700 giữ làm lịch sử, chưa cập nhật số đếm trong README; không
+  dùng làm source hiện hành. Nhật ký đồng bộ riêng sau snapshot ZIP.
+- Tài liệu Drive cập nhật cùng file: research_plan v18,
+  preference_annotation v11, preference_training v12,
+  project_description v5. Kế hoạch tải lại khớp local.
+- Đối chiếu lại 304 file lịch sử: còn đủ và không đổi hash. Không đổi
+  checkpoint M1, notebook/output hoặc nhãn của các lượt trước.
+- Record khởi chạy Drive v4 ghim source cuối, tải lại khớp local.
+  Inspect M2/M3 đều dừng đúng ở điều kiện chưa khóa bộ dữ liệu/N;
+  không tải model hay khởi chạy GPU. Biên nhận ở
+  `artifacts/preference_review_350_20261013/sync/receipt.json`.
 
 ## 13/10 — rà trước khi commit GitHub
 
@@ -467,7 +508,7 @@ CI code hiện hành đã qua trên Python 3.10/3.11; xem biên bản ở mục 
 
 ## Việc tiếp theo
 
-1. Xác nhận quyết định pilot, chốt N và export/freeze bộ cặp chung.
+1. Duyệt tiếp pool đã khóa, chốt N và export/freeze bộ cặp chung; pilot đã chốt.
 2. Kiểm GPU cho từng trainer, train M2/M3 và giữ các run riêng.
 3. Xuất validation/test theo giao thức; chấm mù 200 ảnh và phân tích M3–M2.
 4. Nghiệm thu demo live và bổ sung kết quả vào báo cáo.
