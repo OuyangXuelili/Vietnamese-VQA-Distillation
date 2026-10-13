@@ -1,7 +1,7 @@
 # Huấn luyện M2/M3
 
 M1-3683 đã được chọn và có đủ prediction validation. Pilot đã chốt; bộ cặp
-đang mở rộng có 95 cặp, chưa chốt cho run chính. Cần chốt N và đóng băng
+đang mở rộng có 110 cặp, chưa chốt cho run chính. Cần chốt N và đóng băng
 bộ cuối. Dữ liệu duyệt bằng AI giữ actor rõ trong metadata, không ghi
 thành nhãn người. Trạng thái tại
 [TIEN_DO.md](../TIEN_DO.md); cách duyệt/export ở
@@ -41,7 +41,7 @@ Hai cell M2/M3 gọi cùng helper, tránh chép lại phần dựng lệnh.
 
 Record `source/preference_training_launch_v1.json` giữ đường dẫn môi trường,
 preferences, M1/selection, hai config và `run_group`. Mặc định chưa khóa
-dữ liệu; 95 cặp hiện tại không mở train chính. Chỉ đặt `data_locked=true`
+dữ liệu; 110 cặp hiện tại không mở train chính. Chỉ đặt `data_locked=true`
 sau khi chốt N/bộ cuối và cập nhật hai config khớp N.
 Runtime mới khôi phục bundle ảnh vào ổ `/content` bằng verifier hiện có;
 record ghim đường dẫn/hash bundle. Ảnh của bộ cặp tiếp tục được đối chiếu

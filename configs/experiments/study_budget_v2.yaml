@@ -42,7 +42,7 @@ preferences:
   review_actor: ai
   human_verified: false
   pilot_finalization: data/preferences/pilot_ai_20261012/decision_record.json
-  review_continuation: data/preferences/review_batch_551_650_20261013/continuation.json
+  review_continuation: data/preferences/review_batch_651_750_20261013/continuation.json
   question_pool_limit: 2000
   target_accepted_pairs: 1000
   first_pass_candidates_per_question: 1
