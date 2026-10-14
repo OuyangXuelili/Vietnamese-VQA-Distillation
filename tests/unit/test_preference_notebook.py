@@ -43,6 +43,19 @@ def test_archived_notebook_preserves_its_exact_original_bytes():
         "83972dbdae24e32b7edfda204b156b1aa988c2f52387e53f4d5adacc8124863d")
 
 
+def test_storage_setup_allows_time_for_auth_and_checks_launch_record():
+    notebook = json.loads((ROOT / "notebooks/04_train_preferences.ipynb").read_text("utf-8"))
+    source = "".join(notebook["cells"][1]["source"])
+    calls = [node for node in ast.walk(ast.parse(source)) if isinstance(node, ast.Call)
+             and isinstance(node.func, ast.Attribute) and node.func.attr == "mount"]
+    assert len(calls) == 1
+    assert {kw.arg: ast.literal_eval(kw.value) for kw in calls[0].keywords} == {
+        "timeout_ms": 600000,
+    }
+    assert "if not LAUNCH_PATH.is_file():" in source
+    assert "print('Project storage ready:', ROOT)" in source
+
+
 @pytest.mark.parametrize("locked", [False, True])
 def test_data_setup_is_conditional_and_precedes_inspection(tmp_path, locked):
     notebook = json.loads((ROOT / "notebooks/04_train_preferences.ipynb").read_text("utf-8"))

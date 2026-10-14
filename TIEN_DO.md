@@ -20,6 +20,17 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 
 ## 14/10 — khởi động notebook 04 trên T4
 
+- Lượt hiện hành: cell 1 đã qua, output `Mounted at /content/drive` và
+  `Project storage ready: /content/drive/MyDrive/Vietnamese_VQA_NLE`.
+  Sửa notebook 04 dùng `timeout_ms=600000`, kiểm launch record tồn tại và
+  in kho dự án; chỉ một lệnh mount. Output trước sửa giữ tại
+  `runtime_setup/04_before_mount_timeout_fix_20261014.ipynb`.
+  `check_project.py` qua Ruff và 926 test. Source
+  `source_20261014_013804_404975` đã lên Drive, tải lại khớp SHA-256
+  `a251701e972b4ace5f222cddf7e8d861fe37e5e7a1e57cfdc7f44140990122d1`
+  và kiểm đủ 238 member. Launch v12 đã tải lại khớp local.
+  Cell 2 đang cài môi trường ghim; chưa chạy GPU gate/train.
+  Đây là sửa khởi động Colab, không đổi bộ cặp hoặc cấu hình học.
 - Mở đúng file Drive `04_train_preferences.ipynb`, ID
   `1emxS1s8mZHYQxVqR4e4tA8j8G_xrzhl0`, tài khoản lưu dự án. Không tạo
   notebook mới, không đổi dữ liệu/siêu tham số hoặc chạy lại M1.
