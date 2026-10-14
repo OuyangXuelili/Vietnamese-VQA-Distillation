@@ -4,12 +4,13 @@
 [M1: code và output đã chạy](https://colab.research.google.com/drive/13Abjl7kJyDKzbxyYsCetJ540OzdK2P_E)
 giữ trong `archive/03_m1_completed_with_outputs_20261013.ipynb`.
 
-Notebook có 7 cell: mô tả, kết nối kho lưu, setup source, kiểm đầu vào,
-M2, M3 và đọc kết quả. Logic train nằm trong `src/`; notebook gọi CLI ở
-`scripts/`. Chỉ có một lần mount và một lần setup môi trường.
+Phần train có 7 cell: mô tả, kết nối kho lưu, setup source, kiểm đầu vào,
+M2, M3 và đọc kết quả. Mục validation ở cuối gọi CLI kiểm checkpoint rồi
+xuất cả bốn nhánh; không sửa các cell train hoặc output cũ. Logic nằm trong
+`src/`; notebook gọi CLI ở `scripts/`. Chỉ có một lần mount.
 
-Mặc định `MODE='inspect'`. Bộ cặp cuối chưa khóa nên chưa mở train.
-Sau khi chốt N: kiểm metadata → `MODE='gate'` → `MODE='train'`.
+Mặc định `MODE='inspect'`. Bộ cuối đã khóa 186 cặp; M2/M3 đã train xong.
+Khi chạy nhóm mới: kiểm metadata → `MODE='gate'` → `MODE='train'`.
 Hai nhánh dùng cùng run group, bộ chosen và checkpoint M1; không dùng
 adapter gate làm điểm khởi đầu run chính.
 

@@ -20,6 +20,29 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 
 ## 14/10 — hoàn tất train M2/M3
 
+### Validation sau train
+
+- Phiên T4 cũ còn kết nối. Thêm mục validation sau bảy cell train trong cùng
+  notebook 04; không đổi/xóa cell hoặc output đã chạy. Ba cell mới lần lượt
+  setup source đánh giá, kiểm đầu vào, gọi CLI xuất đủ bốn nhánh.
+- `scripts/run_study_validation.py` dùng exporter hiện có. Kiểm đủ 1.407 ID,
+  hash annotation, plan train và trọng số M1/M2/M3 trước suy luận; giữ test kín.
+  M0/M1 cũ dùng Torch cu130 và PEFT 0.21, phiên này cu128 và PEFT 0.20;
+  xuất lại baseline trong cùng môi trường thay vì trộn bảng cũ với M2/M3.
+  Không train lại M0/M1 và không ghi đè prediction cũ.
+- Ruff và toàn bộ test qua; thêm chín test cho luồng validation. Source
+  `source_20261014_043218_177469` đã upload và tải lại kiểm đủ 246 file,
+  SHA-256 `1a04a38cd29c0cccb818b4d5aa28920dce5925a146848c1fff712d6ec6ab0ade`.
+  Record `source/validation_launch_v1.json` tải lại khớp local; record train
+  vẫn ghim release trước. Setup môi trường đánh giá `pip check` qua.
+- Cell kiểm trả `inputs_verified`; đã khởi chạy xuất M2 → M3 → M0 → M1 lúc
+  khoảng 11:35 ngày 14/10. Kết quả ở
+  `evaluation_runs/m0_m3_validation_20261014/{m0,m1,m2,m3}.jsonl`, mỗi câu
+  được ghi ngay; khi nối tiếp dùng manifest gốc, không lặp ID.
+  Sau xuất đủ, CLI mới tạo bốn so sánh kèm CI paired image-bootstrap.
+  Chưa có kết quả quality cuối hoặc prediction test.
+  Nhật ký đoạn này đang local; sẽ chỉ ghi đồng bộ sau khi tải lại đối chiếu.
+
 - Hai gate đã qua: M2 5 update / 41,14 giây / 4,35 GiB VRAM;
   M3 5 update / 109,50 giây / 5,16 GiB, reference giữ nguyên.
   Run chính nạp lại M1-3683, không nối trọng số từ gate.

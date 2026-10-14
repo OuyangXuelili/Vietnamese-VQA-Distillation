@@ -16,6 +16,8 @@ def test_notebook_has_one_setup_and_two_short_arm_cells():
     assert [cell["id"] for cell in notebook["cells"]] == [
         "preference-intro", "preference-storage", "preference-source", "preference-preflight",
         "preference-m2", "preference-m3", "preference-results",
+        "preference-validation-intro", "preference-validation-source",
+        "preference-validation-inspect", "preference-validation-export",
     ]
     code = {cell["id"]: "".join(cell["source"]) for cell in notebook["cells"]
             if cell["cell_type"] == "code"}
@@ -34,6 +36,9 @@ def test_notebook_has_one_setup_and_two_short_arm_cells():
     assert len(code["preference-m3"].splitlines()) == 3
     assert "train_sft_full" not in "\n".join(code.values())
     assert "generate_preference_candidates" not in "\n".join(code.values())
+    assert "run_study_validation.py" in code["preference-validation-source"]
+    assert "['--inspect']" in code["preference-validation-inspect"]
+    assert len(code["preference-validation-export"].splitlines()) == 1
     digest = hashlib.sha256((ROOT / "scripts/bootstrap_cloud_source.py").read_bytes()).hexdigest()
     assert digest in code["preference-source"]
     assert all(not cell["outputs"] and cell["execution_count"] is None

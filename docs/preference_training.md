@@ -13,6 +13,20 @@ reference M3 không đổi. Kết quả ở
 [báo cáo train](../reports/generated/preference_training_20261014/README.md).
 Chưa có kết quả validation/test của hai nhánh này.
 
+## Validation sau train
+
+Ba cell cuối notebook gọi `scripts/run_study_validation.py`: setup source,
+kiểm đầu vào, xuất dự đoán. CLI kiểm plan và hash checkpoint M1/M2/M3;
+xuất đủ 1.407 câu cho M2 → M3 → M0 → M1 cùng môi trường và generation config.
+M0/M1 được suy luận lại, không train lại. Bảng baseline cũ vẫn giữ riêng.
+Các file JSONL có manifest và khóa ghi; mất phiên thì gọi lại cùng CLI để
+nối tiếp. Không bấm cell train hoặc chạy tất cả để tiếp tục validation.
+
+Kết quả nằm ở `evaluation_runs/m0_m3_validation_20261014`. Chỉ sau khi đủ
+bốn file mới so M2/M3, M1/M2, M1/M3 và M0/M1, kèm CI paired image-bootstrap.
+EM/F1/ROUGE-L chưa thay phần chấm bám ảnh bởi người; BERTScore làm sau khi
+đối chiếu đủ prediction. Không mở test để chọn cấu hình.
+
 ## Chuẩn bị đầu vào
 
 - `accepted.jsonl`, `chosen_only.jsonl`, `manifest.json` từ cùng bộ đã freeze.
