@@ -44,7 +44,8 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
   11 cell source khớp template local (MODE train/inspect khác có chủ đích),
   output bảy cell cũ khớp bản đã lưu trước validation, không có output lỗi.
   Commit code đánh giá `6bbe36b` đã push; source và record Drive đã readback.
-  Nhật ký đoạn này chưa ghi đồng bộ cho tới khi tải lại đối chiếu.
+  Nhật ký và hướng dẫn validation đã cập nhật trên Drive, readback khớp
+  local. Hồ sơ đối chiếu ở `artifacts/validation_20261014/readbacks`.
 
 ## 14/10 — hoàn tất train M2/M3
 
