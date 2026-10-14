@@ -8,9 +8,10 @@ Cập nhật: 14/10/2026.
 |---|---|
 | Dữ liệu | ViVQA-X `image_disjoint_v1`, 29.459 train / 1.407 validation / 1.968 test; 28.180 ảnh đã kiểm local và bundle cloud |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
-| Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
+| Validation M0 → M1 (11/10) | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
 | Cặp ưu tiên | Hết 2.000 ứng viên: 1.966 ảnh đã xem, 34 câu tách theo phạm vi, 0 pending. Khóa 186 cặp sau rút 15 cặp yếu; pilot/notes cũ không đổi |
 | M2/M3 | Đã train trên T4, cùng 186 cặp, mỗi nhánh một epoch / 24 update; policy cập nhật, adapter lưu được kiểm tra; reference M3 giữ nguyên |
+| Validation bốn nhánh | M2 đủ 1.407 câu đã kiểm; M3 khởi chạy lại từ adapter đã train, log gần nhất 114/1.407 lúc 15:53; chưa có bảng so sánh đủ bốn nhánh |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
 
@@ -20,6 +21,35 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 
 ## 14/10 — validation bốn nhánh
 
+- Sau xác thực, chạy lại cell 1 thành công. Cell 2 cài môi trường ghim,
+  `pip check` qua; cell 3 kiểm bundle đủ 28.180 ảnh và metadata M2/M3.
+  Cell 8 nạp source `source_20261014_071715_550824`; cell 9 trả
+  `inputs_verified`. Chỉ chạy cell 1–3, 8–10; không train lại cell 4–6.
+- Cell 10 khởi chạy khoảng 15:45 trên T4. Kế thừa đủ 1.407 câu M2;
+  readback bản gốc và bản nối tiếp khớp receipt, nội dung từng dòng chỉ
+  khác địa chỉ adapter. Bản gốc SHA-256 `16fb1ede9709814c6815145fa4e43e8195f5e4bb03a9df6e1879bb0df37cb101`;
+  bản nối tiếp `566d87557d9be5e5c0eadd84de96cec478a6fab8b53190fc265c85801b9d4762`.
+  M3 chỉ còn manifest, không có JSONL gốc: kế thừa 0 câu, xuất lại từ
+  checkpoint-24. Không ghi 611 dòng trong log cũ thành dữ liệu đã lưu.
+- M2 đối chiếu đủ canonical và manifest; `scripts/evaluate.py` trả
+  EM 70,58%, F1 74,74%, ROUGE-L 42,88%, đúng định dạng 100% trên 1.407 câu.
+  Chưa so trực tiếp với bảng M0/M1 cũ khác môi trường; chờ baseline xuất
+  lại cùng phiên và M3. Đây là validation, không phải kết quả test.
+- Snapshot M3 25 câu đã đóng tệp, xuất hiện trên Drive và tải lại kiểm
+  checksum/canonical qua. SHA-256 prediction
+  `e16181bdb809948abbb4e2d18ae0506d40636f34ec9d751dfe1699af116737b2`;
+  readback ở `artifacts/validation_20261014/readbacks/m3_0025`.
+  Log sau đó có `Recovery snapshot: 100 predictions`; snapshot 100 chưa
+  được tải lại đối chiếu. CLI tiếp tục M3 → M0 → M1 rồi so sánh, nếu phiên
+  không ngắt. Thư mục Drive mới ID `1Pt5lFwsCSwZCHE8CPN8jG95gHCblaMI5`.
+- Notebook tải lúc 15:53 có 11 cell, không có output lỗi; output train
+  cell 4–6 khớp archive, code chỉ khác template ở MODE train của cell 3.
+  Log mới đến 114/1.407. Bản lưu
+  `artifacts/validation_20261014/04_resume01_running_with_outputs_1553.ipynb`,
+  SHA-256 `acf7bab76e721c8ec07ec3d91d8a010d6c2033f5d0636c3d033452b33e79c0ae`.
+  Sau khi tải notebook, công cụ điều khiển Chrome không đọc được tab; không reset Colab
+  hoặc chạy lại cell. Chưa kiểm được trạng thái live sau mốc này. Nhật ký
+  lượt này hiện local-only; source/launch đã đồng bộ ở lượt trước.
 - Bản sửa nối tiếp đã qua Ruff và 965 test. Source
   `source_20261014_071715_550824` đã tải lên Drive; tải lại ZIP khớp
   SHA-256 `39667a0ba31dc2c29b771d7ea1d25b5720bd9d7d56238c92d70aab694046dd55`.
