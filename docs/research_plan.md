@@ -19,8 +19,8 @@ pháp, nhưng không suy từ đó ra điểm hoặc chuẩn chấm của trư�
 |---|---|---|
 | Dữ liệu | ViVQA-X `image_disjoint_v1`: 29.459 train, 1.407 validation, 1.968 test; đã tách ảnh | Giữ nguyên split |
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683; đủ validation M0/M1 | Đánh giá test sau khi khóa thiết kế |
-| Preference | Xử lý hết 2.000 ứng viên; khóa 186 cặp sau kiểm cuối | Khôi phục bundle thật trên cloud |
-| M2/M3 | Trainer/resume local, bộ cặp đã đóng băng | GPU gate và train thật |
+| Preference | Xử lý hết 2.000 ứng viên; khóa 186 cặp, đã khôi phục và kiểm bundle trên Colab | Giữ nguyên bộ dùng train |
+| M2/M3 | Hai gate qua trên T4; mỗi run chính một epoch / 24 update trên 186 cặp | Validation/test và kiểm chất lượng |
 | Đánh giá cuối | Scorer và mẫu cố định 200 ảnh test | Prediction bốn nhánh và nhãn chấm |
 | Demo | Replay M1 và backend live đã viết | Nghiệm thu suy luận ảnh mới trên GPU |
 

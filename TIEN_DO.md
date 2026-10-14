@@ -10,13 +10,48 @@ Cập nhật: 14/10/2026.
 | M0/M1 | M1 một epoch, 3.683 update; chọn checkpoint-3683 từ loss 256 validation; đã xuất đủ validation M0/M1 |
 | Chỉ số M0 → M1 | EM 41,01 → 70,93; F1 52,41 → 75,11; ROUGE-L 27,05 → 44,29; BERTScore 75,82 → 82,47; chỉ số nhân 100 |
 | Cặp ưu tiên | Hết 2.000 ứng viên: 1.966 ảnh đã xem, 34 câu tách theo phạm vi, 0 pending. Khóa 186 cặp sau rút 15 cặp yếu; pilot/notes cũ không đổi |
-| M2/M3 | Bộ cuối cùng ID/chosen, hai config N=186; trainer/resume đã kiểm local; chưa train GPU |
+| M2/M3 | Đã train trên T4, cùng 186 cặp, mỗi nhánh một epoch / 24 update; policy cập nhật, adapter lưu được kiểm tra; reference M3 giữ nguyên |
 | Đánh giá cuối | Đã cố định mẫu 200 ảnh test; chưa có prediction test bốn nhánh hoặc nhãn người |
 | Demo | Replay 12 ví dụ đã kiểm API và Chrome; live chưa nghiệm thu GPU |
 
 Bảng validation và CI ở
 [reports/generated/m0_m1_validation_20261011](reports/generated/m0_m1_validation_20261011/README.md).
 Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](docs/research_plan.md).
+
+## 14/10 — hoàn tất train M2/M3
+
+- Hai gate đã qua: M2 5 update / 41,14 giây / 4,35 GiB VRAM;
+  M3 5 update / 109,50 giây / 5,16 GiB, reference giữ nguyên.
+  Run chính nạp lại M1-3683, không nối trọng số từ gate.
+- M2 `m2_train`: đủ 24 update, epoch 1,0; thời gian train 170,44 giây,
+  loss 1,5811, peak VRAM 4,37 GiB. M3 `m3_train`: đủ 24 update,
+  epoch 1,0; 503,20 giây, DPO loss 0,6513, peak VRAM 5,17 GiB.
+  Cả hai `status=passed`, `policy_updated=true`, `saved_policy_verified=true`;
+  M3 thêm `reference_unchanged=true`. Loss hai nhánh không so trực tiếp.
+- Checkpoint cuối ở Drive `runs/preferences/vivqax_m1_3683_v1/`
+  `m2_train/training/checkpoint-24` và `m3_train/training/checkpoint-24`.
+  Output run/gate cũ giữ nguyên. Chưa chạy validation/test cho M2/M3.
+- Bản notebook đã chạy giữ tại
+  `notebooks/archive/04_preferences_completed_with_outputs_20261014.ipynb`;
+  file Drive vẫn cùng ID `1emxS1s8mZHYQxVqR4e4tA8j8G_xrzhl0`, đủ output.
+  Code khớp template local, khác duy nhất MODE của phiên đang dùng (`train`);
+  template local mặc định `inspect` để tránh khởi chạy GPU ngoài ý muốn.
+- Báo cáo JSON local được trích từ stdout notebook, không thay checkpoint
+  hoặc các file run gốc trên Drive. Xem
+  `reports/generated/preference_training_20261014/README.md`.
+  Source đã dùng là `source_20261014_021042_322687` (243 file), launch v13;
+  code đã push ở `56dfb7e`. 937 test và full-data audit/preflight qua trước train.
+- Việc tiếp theo: xuất 1.407 validation cho M2/M3, kiểm các manifest trước
+  so với M0/M1; khóa inference rồi mới xuất test và chấm mù 200 ảnh.
+  Không train thêm epoch chỉ từ loss.
+- `documents/preference_training.md` và `research_plan.md` đã cập nhật
+  trên Drive, tải lại khớp local. Gói `reports/training_evidence_20261014.zip`
+  cùng `.sha256` đã upload; readback khớp ZIP và đủ sáu file: notebook đầy đủ
+  output, hai report JSON trích stdout, hai ảnh kết quả và README.
+  ZIP SHA-256 `8f16818b33f1eae47bbab22781ee34262050aedaf65cbbb8c24f656a9441531e`.
+  Không có ảnh dữ liệu hoặc trọng số trong gói này; checkpoint gốc vẫn ở runs.
+  Đối chiếu lại 132 hash source trong từng report đều khớp code local.
+  Notebook có đủ execution count cho sáu cell code, không có output lỗi.
 
 ## 14/10 — khởi động notebook 04 trên T4
 

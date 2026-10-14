@@ -14,6 +14,7 @@ Giữ nguyên nội dung/output các kiểm thử trước M1. Không cần ch�
 | 08 | Kiểm tra optimizer và dừng 10 → resume 20 |
 | 03_m1_and_preference_before_reorganization_20261013 | Bản local nguyên vẹn trước khi rút gọn notebook 03; chứa cả phần thử chưa chạy |
 | 03_m1_completed_with_outputs_20261013 | Bản tải từ Colab, 20 cell và 24 output; giữ nguyên byte |
+| 04_preferences_completed_with_outputs_20261014 | Bản tải từ cùng notebook 04 sau train M2/M3, 7 cell; hai nhánh đủ 24 update / một epoch |
 
 Không dùng kết quả smoke thay kết quả full M1. Notebook 05–07 có thể chọn
 release mới nhất khi chạy lại; 08 ghim release rehearsal cũ. Không Run all

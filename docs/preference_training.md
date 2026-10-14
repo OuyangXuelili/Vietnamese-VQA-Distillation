@@ -7,6 +7,12 @@ thành nhãn người. Trạng thái tại
 [TIEN_DO.md](../TIEN_DO.md); cách duyệt/export ở
 [preference_annotation.md](preference_annotation.md).
 
+Run 14/10 đã hoàn tất: M2/M3 mỗi nhánh 24 update, epoch 1,0 trên T4.
+Hai gate được giữ riêng, run chính nạp M1 sạch. Adapter đã kiểm byte sau lưu;
+reference M3 không đổi. Kết quả ở
+[báo cáo train](../reports/generated/preference_training_20261014/README.md).
+Chưa có kết quả validation/test của hai nhánh này.
+
 ## Chuẩn bị đầu vào
 
 - `accepted.jsonl`, `chosen_only.jsonl`, `manifest.json` từ cùng bộ đã freeze.
@@ -154,5 +160,5 @@ cast QLoRA trainable sang BF16. Bản 0.28 được kiểm chưa chuyển `image
 trong đường forward DPO. Vì vậy dùng Transformers Trainer và loss chuẩn DPO
 riêng, giữ lại collator Qwen đã kiểm. Đây là lựa chọn triển khai, không phải thuật toán mới.
 
-Chưa train M2/M3, chưa tạo nhãn người. Trạng thái đồng bộ đọc từ TIEN_DO.
+M2/M3 đã train xong; chưa tạo nhãn người. Trạng thái đồng bộ đọc từ TIEN_DO.
 Công cụ chấm test theo [hướng dẫn](human_evaluation.md); demo còn cần hoàn thiện.
