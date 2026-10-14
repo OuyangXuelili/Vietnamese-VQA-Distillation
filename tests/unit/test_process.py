@@ -30,3 +30,18 @@ def test_child_does_not_inherit_parent_python_paths(monkeypatch, capsys):
                "import os,sys; print(os.getenv('PYTHONPATH')); print(sys.flags.no_user_site)"]
     assert run_command(command) == 0
     assert capsys.readouterr().out.splitlines() == ["None", "1"]
+
+
+def test_output_callback_receives_complete_lines():
+    lines = []
+    run_command([sys.executable, "-c", "print('first'); print('second')"], on_output=lines.append)
+    assert lines == ["first\n", "second\n"]
+
+
+def test_callback_failure_stops_child_and_propagates():
+    def fail(line):
+        raise ValueError("snapshot failed")
+
+    with pytest.raises(ValueError, match="snapshot failed"):
+        run_command([sys.executable, "-u", "-c",
+                     "import time; print('ready'); time.sleep(30)"], on_output=fail)

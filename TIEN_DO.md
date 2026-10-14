@@ -20,6 +20,55 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
 
 ## 14/10 — validation bốn nhánh
 
+- Bản sửa nối tiếp đã qua Ruff và 965 test. Source
+  `source_20261014_071715_550824` đã tải lên Drive; tải lại ZIP khớp
+  SHA-256 `39667a0ba31dc2c29b771d7ea1d25b5720bd9d7d56238c92d70aab694046dd55`.
+  Record `source/validation_launch_v1.json` cập nhật bằng phiên bản mới
+  trên cùng tệp Drive, readback khớp SHA-256
+  `73dbee60c7a012ca73a86319192b12753522d900da8ddcc299942030fb8c127c`.
+  Đích nối tiếp là `evaluation_runs/m0_m3_validation_20261014_resume01`;
+  thư mục gốc và record train không đổi.
+- Khoảng 15:11 kết nối lại T4 trên cùng notebook 04. Kernel đã reset,
+  nên cell 8 báo thiếu biến `json` trước khi đọc dữ liệu. Chạy lại cell 1
+  đang chờ xác thực Drive; chưa chạy inference phiên mới. Sau xác thực:
+  cell 2 → 3 → 8 → 9 → 10; bỏ qua cell 4–6 đã train xong. Popup lỗi
+  JavaScript output không còn trong quan sát hiện tại. Không đổi cookie,
+  quyền riêng tư hoặc tài khoản để xử lý popup.
+- Sau xác thực, mount thành công; khôi phục môi trường riêng và đủ 28.180
+  ảnh. Cell inspect kiểm đầu vào qua. Cell export dừng trước suy luận với
+  `Resume inputs/source/adapter/environment changed`. Snapshot có traceback
+  ở `artifacts/validation_20261014/04_resume_error_1352.ipynb`.
+- Manifest M2 tải trực tiếp từ Drive ghi adapter dưới `/content/drive/MyDrive/`;
+  mount hiện tại resolve qua shortcut cùng kho ID `17bcTXATT45J5LEmtruMRs1ddwRY5kBwc`.
+  Python vẫn 3.13.15; thư viện chính và sáu file source của exporter không đổi.
+  Thử remount dùng lại tài khoản đã xác thực, vẫn là shortcut. Không đổi
+  tài khoản Colab, sửa manifest gốc hoặc bỏ cổng resume.
+- Bổ sung chuyển kho có kiểm: `--relocate-from` chỉ chấp nhận đổi địa chỉ
+  adapter khi toàn bộ đầu vào khác khớp. Tạo thư mục kết quả mới, giữ bản
+  gốc và ghi checksum/lineage; đáp án, giải thích và thời gian đo không sửa.
+  Lượt xuất mới lưu thêm snapshot đóng tệp sau câu 25 và mỗi 100 câu để
+  hạn chế mất prediction đang mở trên Drive. Chưa ghi là đã chạy GPU bản mới.
+- Xung đột lưu Colab đã được đối chiếu bằng nguồn thô: đủ 11 cell, code
+  hai phía giống nhau, output train cell 4–6 giống nhau; khác output 1–3
+  do khôi phục môi trường. Đã lưu bản hiện tại. Báo cáo Word cũ không đổi;
+  nháp Markdown chưa hợp nhất được chuyển vào thư mục build riêng, không
+  đưa vào source release. Bộ cặp và checkpoint train giữ nguyên.
+
+- Kiểm lại lúc khoảng 13:19: output phiên trước đã xuất đủ M2 1.407 câu,
+  M3 đến 611/1.407 rồi ngắt. Chưa có output hoàn tất M0/M1 hoặc bảng so sánh
+  bốn nhánh. Tab người dùng đang mở có T4 kết nối nhưng kernel mới, chưa chạy
+  pipeline trong phiên này. Không chạy lại cell train M2/M3.
+- Trước thao tác nối tiếp, đã tải snapshot
+  `artifacts/validation_20261014/04_before_resume_1319.ipynb`, SHA-256
+  `dfbf6e9048325f4b4c24a44e1fa7a410b2307fd0e0abbb5d81ad88cda42b5c45`.
+  Đủ 11 cell; source chỉ khác template ở MODE train của cell 3, có chủ đích.
+  Output cell 4–6 khớp bản train đã lưu, không có output lỗi.
+- Đã chạy cell 1 trên đúng tab hiện tại; đang chờ hộp cấp quyền Drive.
+  Chưa xác nhận số dòng JSONL thực lưu trên Drive và chưa resume suy luận.
+  Sau mount cần khôi phục setup/preflight rồi chạy mục validation, không
+  chạy tất cả. Ghi nhận này và snapshot mới hiện local-only; code, source
+  release và các checkpoint không đổi.
+
 - Phiên T4 cũ còn kết nối. Thêm mục validation sau bảy cell train trong cùng
   notebook 04; không đổi/xóa cell hoặc output đã chạy. Ba cell mới lần lượt
   setup source đánh giá, kiểm đầu vào, gọi CLI xuất đủ bốn nhánh.

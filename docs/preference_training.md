@@ -22,6 +22,25 @@ M0/M1 được suy luận lại, không train lại. Bảng baseline cũ vẫn g
 Các file JSONL có manifest và khóa ghi; mất phiên thì gọi lại cùng CLI để
 nối tiếp. Không bấm cell train hoặc chạy tất cả để tiếp tục validation.
 
+Nếu mất VM, chạy cell 1 → 2 → 3 để mount kho, khôi phục môi trường và ảnh;
+chờ từng cell hoàn tất. Sau đó chạy cell 8 → 9 → 10 trong mục validation.
+Không chạy lại cell 4–6. Output cũ không chứng minh kernel mới đã có biến;
+kiểm execution count và log mới trước khi chuyển cell. CLI resume kiểm
+JSONL/manifest đã lưu và bỏ qua ID hoàn tất, không train lại các adapter.
+
+Nếu kho được mount qua shortcut làm đường dẫn adapter khác, dùng
+`--relocate-from <RUN_CU>` với một `--output-dir` mới. CLI chỉ cho phép
+đổi địa chỉ adapter sau khi hash trọng số, dữ liệu, source suy luận và
+runtime khớp; kiểm từng prediction rồi tạo bản sao có biên bản chuyển kho.
+Run gốc không đổi. Record launch có thể khai `relocate_from`; các lần
+resume sau kiểm biên bản đã tạo rồi tiếp tục cùng thư mục mới.
+
+Trong lượt xuất mới, CLI lưu thêm bản sao đóng tệp ở `recovery/` sau câu
+25 và mỗi 100 câu. Mỗi bản có JSONL, manifest và checksum; không phải
+checkpoint train. Chỉ tính số câu thực đọc được trong file, không suy số
+đã lưu từ dòng tiến độ trên trình duyệt. Khi Drive mất file đang mở,
+giữ nguyên bản lỗi và kiểm snapshot trước khi khôi phục.
+
 Kết quả nằm ở `evaluation_runs/m0_m3_validation_20261014`. Chỉ sau khi đủ
 bốn file mới so M2/M3, M1/M2, M1/M3 và M0/M1, kèm CI paired image-bootstrap.
 EM/F1/ROUGE-L chưa thay phần chấm bám ảnh bởi người; BERTScore làm sau khi
@@ -54,8 +73,9 @@ Lệnh không cập nhật config, chọn N hoặc chạy GPU thay người th�
 Logic ở `training/preference.py`, input/collator ở `training/preference_data.py`.
 CLI `scripts/train_preference.py` đọc config và chạy trainer.
 
-Notebook `04_train_preferences.ipynb` có 7 cell: kho lưu, source, preflight,
-M2, M3, kết quả và một phần mô tả ngắn. `scripts/launch_preference_training.py` chuyển
+Phần train của `04_train_preferences.ipynb` có 7 cell: kho lưu, source,
+preflight, M2, M3, kết quả và mô tả ngắn. Mục validation thêm 4 cell,
+tổng 11 cell; output train giữ nguyên. `scripts/launch_preference_training.py` chuyển
 record khởi chạy thành tham số CLI trên; không chứa loss hoặc trainer mới.
 Hai cell M2/M3 gọi cùng helper, tránh chép lại phần dựng lệnh.
 

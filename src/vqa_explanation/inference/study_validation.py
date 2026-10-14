@@ -2,10 +2,18 @@
 
 import hashlib
 import json
+import re
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 from vqa_explanation.inference.export import read_jsonl, validate_selected_records
+from vqa_explanation.inference.export_relocation import (
+    prepare_relocation,
+    snapshot_export,
+    verify_relocation_group,
+    write_relocation,
+)
 from vqa_explanation.utils.environment import load_environment, project_root
 from vqa_explanation.utils.process import run_command
 from vqa_explanation.utils.run_provenance import sha256_file
@@ -92,18 +100,57 @@ def export_command(root, environment, annotations, adapter, arm, output):
 
 
 def run_validation(environment_path, run_group, m1_adapter, output_dir, *, inspect_only=False,
-                   runner=run_command):
+                   runner=run_command, relocate_from=None):
     environment, annotations, adapters, evidence = prepare_validation(
         environment_path, run_group, m1_adapter, output_dir
     )
     root, output_dir = project_root(), Path(output_dir).resolve()
+    relocations = []
+    if relocate_from is not None and not Path(relocate_from).is_dir():
+        raise ValueError("Original export directory is missing")
+    if relocate_from is not None and output_dir.exists():
+        verify_relocation_group(relocate_from, output_dir)
+    elif relocate_from is not None:
+        for arm in ("m2", "m3", "m0", "m1"):
+            args = SimpleNamespace(
+                annotations=annotations, image_root=environment["image_root"],
+                output=output_dir / f"{arm}.jsonl", adapter=adapters[arm],
+                split="validation", limit=0, seed=42, model_id=MODEL_ID,
+                revision=MODEL_REVISION, experiment_id=ARMS[arm],
+                min_pixels=200704, max_pixels=200704, max_new_tokens=128, load_in_4bit=True,
+            )
+            plan = prepare_relocation(Path(relocate_from) / f"{arm}.jsonl", args)
+            if plan is not None:
+                relocations.append(plan)
+        if not relocations:
+            raise ValueError("Original directory has no verifiable exports")
+        if not inspect_only:
+            receipts = []
+            for plan in relocations:
+                receipt = write_relocation(plan)
+                receipts.append(receipt)
+                print(json.dumps(receipt, ensure_ascii=False), flush=True)
+            with (output_dir / "relocation_group.json").open("x", encoding="utf-8") as handle:
+                json.dump({"schema": "validation_export_relocation_v1",
+                           "source_dir": str(Path(relocate_from).resolve()),
+                           "receipts": receipts}, handle, ensure_ascii=False, indent=2)
     commands = [export_command(root, environment, annotations, adapters[arm], arm,
                                output_dir / f"{arm}.jsonl") for arm in ("m2", "m3", "m0", "m1")]
     if inspect_only:
-        return {"status": "inputs_verified", "questions": 1407, "commands": commands}
+        return {"status": "inputs_verified", "questions": 1407, "commands": commands,
+                "relocations": [plan["receipt"] for plan in relocations]}
+    records = read_jsonl(annotations)
     for arm, command in zip(("m2", "m3", "m0", "m1"), commands, strict=True):
         print(f"Export {arm}: all 1407 validation questions", flush=True)
-        runner(command, cwd=root)
+
+        def save_progress(line, output=output_dir / f"{arm}.jsonl"):
+            match = re.fullmatch(r"\[(\d+)/1407\] \S+ format=(True|False)\n", line)
+            if match and (int(match[1]) == 25 or int(match[1]) % 100 == 0):
+                snapshot = snapshot_export(output, records)
+                if snapshot:
+                    print(f"Recovery snapshot: {snapshot['predictions']} predictions", flush=True)
+
+        runner(command, cwd=root, on_output=save_progress)
     for left, right in (("m2", "m3"), ("m1", "m2"), ("m1", "m3"), ("m0", "m1")):
         destination = output_dir / f"{left}_{right}_comparison.json"
         if destination.exists():
