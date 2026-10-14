@@ -28,6 +28,10 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
   Các cell source/preflight/gate/train chưa chạy. Sau xác thực phải chạy
   lại cell 1, không chạy tất cả hoặc bỏ qua gate.
   Đã yêu cầu người dùng hoàn tất xác thực; không tự bấm quyền Drive.
+- Sau khi người dùng báo xác thực xong, đã lưu notebook có output lỗi ở
+  `runtime_setup/04_before_mount_retry_20261014.ipynb` (7 cell, 1 output lỗi).
+  Chạy lại đúng cell 1 trên T4 hiện tại; Colab mở hộp kết nối Drive mới,
+  vẫn chờ người dùng hoàn tất. Không tạo notebook hoặc chạy cell source/train.
 - Rà launcher phát hiện trường pin decision record đã được ghi nhưng chưa
   được đối chiếu. Thêm kiểm checksum quyết định và manifest frozen trước
   đọc stage/model; cùng 186 cặp nhưng khác bundle cũng bị từ chối.
