@@ -29,8 +29,22 @@ Hướng nghiên cứu và các việc tiếp theo ở [docs/research_plan.md](d
   `source_20261014_013804_404975` đã lên Drive, tải lại khớp SHA-256
   `a251701e972b4ace5f222cddf7e8d861fe37e5e7a1e57cfdc7f44140990122d1`
   và kiểm đủ 238 member. Launch v12 đã tải lại khớp local.
-  Cell 2 đang cài môi trường ghim; chưa chạy GPU gate/train.
+  Cell 2 cài được gói ghim nhưng `pip check` của kernel thất bại: RAPIDS
+  cần CUDA 13, Gradio/diffusers cần huggingface-hub mới hơn. Output đầy đủ
+  đã giữ tại `mount_timeout_20261014/04_dependency_conflicts.ipynb`.
+  Chưa chạy GPU gate/train.
   Đây là sửa khởi động Colab, không đổi bộ cặp hoặc cấu hình học.
+- Tách môi trường bằng `setup_preference_environment.py`, không nạp system
+  site-packages. CLI ảnh/M2/M3 dùng Python riêng; log stdout/stderr được
+  chuyển tiếp ra notebook, không bỏ qua lỗi phụ thuộc. Không thêm cell.
+  `check_project.py --full-data` qua Ruff, 937 test và đủ dữ liệu; run
+  `audit_20261014_020814_802091`, `preflight_20261014_020850_321433`.
+  Bộ 186 cặp, M1 và các thông số học không đổi. Bản môi trường riêng chưa
+  được chạy GPU. Source `source_20261014_021042_322687` đã lên Drive, tải
+  lại khớp SHA-256 `7c0f3c7cfdeb405cfc76f2b2103178294864eb262f381665bf1e4184f3d44809`
+  và kiểm đủ 243 member. Launch v13 tải lại khớp local; cell 2 đang cài
+  vào `/content/vqa_envs/source_20261014_021042_322687`, có log trực tiếp.
+  Các cell 3–5 đã chuyển cùng Python riêng; chưa thực thi trước khi setup qua.
 - Mở đúng file Drive `04_train_preferences.ipynb`, ID
   `1emxS1s8mZHYQxVqR4e4tA8j8G_xrzhl0`, tài khoản lưu dự án. Không tạo
   notebook mới, không đổi dữ liệu/siêu tham số hoặc chạy lại M1.

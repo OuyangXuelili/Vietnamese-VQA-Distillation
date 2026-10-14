@@ -107,12 +107,13 @@ def stage_output(run_folder, arm, mode, attempt="initial"):
 
 
 def launch_command(repo, record, project_dir, arm, mode, run_folder,
-                   resume=None, attempt="initial"):
+                   resume=None, attempt="initial", python_executable=None):
     """Keep notebook cells limited to one explicit arm invocation."""
     output = stage_output(run_folder, arm, mode, attempt)
     if resume is not None and (mode != "train" or attempt == "initial"):
         raise ValueError("Resume requires train mode and a new attempt label")
-    command = [sys.executable, str(repo / "scripts/launch_preference_training.py"),
+    command = [str(python_executable or sys.executable),
+               str(repo / "scripts/launch_preference_training.py"),
                "--launch-record", str(record), "--project-dir", str(project_dir),
                "--arm", arm, "--mode", mode,
                "--output-dir", str(output)]

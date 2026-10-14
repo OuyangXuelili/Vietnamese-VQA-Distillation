@@ -27,6 +27,9 @@ def test_notebook_has_one_setup_and_two_short_arm_cells():
     assert "datetime" not in code["preference-preflight"]
     assert "ATTEMPT = {'m2': 'initial', 'm3': 'initial'}" in code["preference-preflight"]
     assert "stage_output(RUN_FOLDER, arm, MODE, ATTEMPT[arm])" in code["preference-results"]
+    assert "setup_preference_environment.py" in code["preference-source"]
+    assert "pip', 'install'" not in code["preference-source"]
+    assert "python_executable=PYTHON" in code["preference-preflight"]
     assert len(code["preference-m2"].splitlines()) == 3
     assert len(code["preference-m3"].splitlines()) == 3
     assert "train_sft_full" not in "\n".join(code.values())
@@ -77,7 +80,7 @@ def test_data_setup_is_conditional_and_precedes_inspection(tmp_path, locked):
 
     namespace = {
         "ROOT": tmp_path, "REPO": tmp_path, "LAUNCH_PATH": tmp_path / "launch.json",
-        "hashlib": hashlib, "subprocess": Commands, "sys": __import__("sys"),
+        "hashlib": hashlib, "run_command": Commands.run, "PYTHON": tmp_path / "env/python",
         "launch": {"data_locked": locked, "environment": str(environment),
                    "run_group": "runs/main", "dataset_bundle": "bundle",
                    "dataset_bundle_sha256": hashlib.sha256(b"{}").hexdigest()},

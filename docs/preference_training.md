@@ -87,12 +87,22 @@ Lệnh chạy M2 dùng config matched-LR, M3 dùng dpo; cả hai cần gate riê
 - Dtype ở config train có hiệu lực: auto = FP16 trên T4, BF16 chỉ khi native.
   Dtype legacy trong model YAML không điều khiển hai stage mới.
 
-Trong **runtime GPU mới**, cài `requirements-cloud-preference.txt`, chạy
-`pip check`, ghi phiên bản và GPU. File này ghim các thư viện chính; không phải
+Trong **runtime GPU mới**, cell 2 tạo môi trường riêng bằng
+`scripts/setup_preference_environment.py`. Môi trường ở `/content/vqa_envs/<release>`;
+không lấy thư viện hệ thống của Colab. CLI kiểm ảnh, M2/M3 đều dùng Python
+của môi trường này. Kernel chỉ mount Drive và điều phối. Log subprocess được
+chuyển tiếp ra notebook, kể cả lỗi cài đặt. Process con bỏ Python path/home
+kế thừa và không nạp user-site để giữ môi trường riêng. Ghi phiên bản và GPU trong run.
+Cài `requirements-cloud-preference.txt`, chạy `pip check` trong môi trường đó.
+File này ghim các thư viện chính; không phải
 lock toàn bộ phụ thuộc bắc cầu hoặc bằng chứng đã chạy GPU. CUDA wheel/runtime
 còn phải xác nhận trong cổng GPU. Torch/Torchvision ghim bản `+cu128`;
 đã kiểm wheel Python 3.13/Linux trong [index PyTorch chính thức](https://download.pytorch.org/whl/cu128/torch/).
 Không thay môi trường M1.
+
+Pip điều khiển venv không có pip qua `--python`, theo
+[tài liệu pip](https://pip.pypa.io/en/stable/topics/python-option/).
+Không bỏ qua dependency check vì các gói cài sẵn của Colab bị lệch phiên bản.
 
 Ví dụ sau khi có bundle và selection thật, tại repo:
 

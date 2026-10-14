@@ -138,6 +138,15 @@ def test_main_launch_uses_same_gate_folder_after_reexecution(tmp_path):
     assert command[command.index("--output-dir") + 1] == str(tmp_path / "run/m3_train")
 
 
+@pytest.mark.parametrize("arm", ["m2", "m3"])
+def test_cloud_command_uses_the_isolated_interpreter(tmp_path, arm):
+    python = tmp_path / "env/bin/python"
+    command = launch.launch_command(tmp_path, tmp_path / "launch.json", tmp_path,
+                                    arm, "gate", tmp_path / "run", python_executable=python)
+    assert command[0] == str(python)
+    assert command[command.index("--mode") + 1] == "gate"
+
+
 @pytest.mark.parametrize("mode,returncode", [("inspect", 0), ("gate", 2), ("train", 2)])
 def test_launch_cli_blocks_an_unlocked_record_before_training(tmp_path, mode, returncode):
     import subprocess
